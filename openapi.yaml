@@ -4,40 +4,130 @@ info:
   description: |-
     This is the app for Wasa Project 2022/23
   version: "1"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: integer
+  responses:
+    UnauthorizedError:
+      description: Access token is missing or invalid
+  parameters:
+    UserID:
+      schema:
+        type: integer
+        example: 1
+      name: id
+      in: path
+      required: true
+      description: User identifier
+  schemas:
+    Name:
+      type: string
+      example: Maria
+      pattern: 'ˆ.*?$'
+      minLength: 3
+      maxLength: 16
+    User:
+      title: User 
+      description: "Represents a user who uses WASAPhoto"
+      type: object
+      properties:
+        id:
+          description: User identifier
+          type: integer
+          example: 1
+        name: {$ref: "#/components/schemas/Name"}
+    Image:
+      type: string
+      format: base64
+      example: TWFuIGlzIGRpc3Rpb
+
 paths:
   /session:
-   post:
-    tags: ["login"]
-    summary: Logs in the user
-    description: |-
-      If the user does not exist, it will be created,
-      and an identifier is returned.
-      If the user exists, the user identifier is returned.
-    operationId: doLogin
-    requestBody:
-      description: User details
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              name:
-                type: string
-                example: Maria
-                pattern: 'ˆ.*?$'
-                minLength: 3
-                maxLength: 16
-      required: true
-    responses:
-      '201':
-        description: User log-in action successful
+    post:
+      tags: ["login"]
+      summary:  Logs in the user
+      description: |-
+        If the user does not exist, it will be created,
+        and an identifier is returned.
+        If the user exists, the user identifier is returned.
+      operationId:  doLogin
+      requestBody:
+        description: User details
         content:
           application/json:
             schema:
               type: object
               properties:
-                identifier: 
-                  # change here if you decide to use an integer
-                  # or any other type of identifier
-                  type: string
-                  example: "abcdef012345"
+                name: {$ref: "#/components/schemas/Name"}
+        required: true
+      responses:
+        '201':
+          description: User log-in action successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  identifier: 
+                    type: integer
+                    example: "1"
+
+  /setusername:
+    put:
+      tags: ["set username"]
+      summary: Sets a name for the user
+      description: |-
+        If the identifier belongs to a user, it will change
+        the username and return the new user resource.
+        If the identifier is unknown, nothing happens.
+      operationId:  setMyUserName
+      requestBody: 
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/User"}
+      responses:
+        "200":
+          description: "Username set successfully"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User"}
+        "400":
+          description: "Bad request"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+      security:   
+        - bearerAuth: []
+
+  /upload: 
+    post:
+      tags: ["upload photo"]
+      summary: Upload a new photo
+      description: |-
+        Upload a new photo to user feed 
+      operationId:  uploadPhoto
+      requestBody: 
+        content:
+          application/json:
+            schema: 
+              type: object
+              properties:
+                image: {$ref: "#/components/schemas/Image"}
+          
+      responses: 
+        "200":
+          description: "Photo uploaded successfully"
+        "400":
+          description: "Bad request"
+      security:   
+      - bearerAuth: []
+  
+  /follow:
+
+    operationId:  followUser
+      
+
+
+      
