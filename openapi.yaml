@@ -22,6 +22,14 @@ components:
       in: path
       required: true
       description: User identifier
+    Username:
+      schema:
+        type: string
+        example: maria00
+      name: username
+      in: path
+      required: true
+      description: User name
   schemas:
     Name:
       type: string
@@ -39,10 +47,54 @@ components:
           type: integer
           example: 1
         name: {$ref: "#/components/schemas/Name"}
+    Photos:
+      title: Photos
+      type: array
+      items: 
+        type: string
+      example: ["www.container.com/img.jpg"]
+    UserProfile:
+      title: UserProfile
+      description: "Represents a user who uses WASAPhoto"
+      type: object
+      properties:
+        id:
+          description: User identifier
+          type: integer
+          example: 1
+        name: {$ref: "#/components/schemas/Name"}
+        photos:  {$ref: "#/components/schemas/Photos"}
+        photosAmount:
+          description: Photos amout
+          type: integer
+          example: 1
+        followersAmount:
+          description: Followers amount
+          type: integer
+          example: 10
+        followingAmount:
+          description: Followers amount
+          type: integer
+          example: 10
     Image:
       type: string
-      format: base64
-      example: TWFuIGlzIGRpc3Rpb
+      format: binary
+    Post:
+      type: object
+      properties:
+        photo:
+          type: string
+          example: www.container.com/img.jpg
+        uploadedAt:
+          type: string
+          format: date-time
+          example: 2017-07-21T17:32:28Z
+        likeAmount:
+          type: integer
+          example: 10
+        commentsAmount:
+          type: integer
+          example: 2
 
 paths:
   /session:
@@ -75,12 +127,12 @@ paths:
                     type: integer
                     example: "1"
 
-  /setusername:
+  /profile/username:
     put:
       tags: ["set username"]
       summary: Sets a name for the user
       description: |-
-        If the identifier belongs to a user, it will change
+        If the identifier in request header belongs to a user, it will change
         the username and return the new user resource.
         If the identifier is unknown, nothing happens.
       operationId:  setMyUserName
@@ -90,44 +142,266 @@ paths:
             schema: {$ref: "#/components/schemas/User"}
       responses:
         "200":
-          description: "Username set successfully"
+          description: Username set successfully
           content:
             application/json:
               schema: { $ref: "#/components/schemas/User"}
         "400":
-          description: "Bad request"
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  identifier: 
+                    type: integer
+                    example: "1"
         "401":
-          $ref: "#/components/responses/UnauthorizedError"
+          {$ref: "#/components/responses/UnauthorizedError"}
       security:   
         - bearerAuth: []
+  
+  /profiles/{username}:
+    get:
+      tags: ["get profile"]
+      summary:  Get user profile
+      description: |-
+        Get the user profile
+      operationId: getUserProfile
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "404":
+          description: User not found
 
-  /upload: 
+  /profile/photos: 
     post:
-      tags: ["upload photo"]
-      summary: Upload a new photo
+      tags: ["photo create/delete"]
+      summary: Upload a new photo to user profile
       description: |-
         Upload a new photo to user feed 
       operationId:  uploadPhoto
       requestBody: 
         content:
-          application/json:
+          multipart/form-data:
             schema: 
               type: object
               properties:
-                image: {$ref: "#/components/schemas/Image"}
-          
+                image: {$ref: "#/components/schemas/Image"}  
       responses: 
         "200":
-          description: "Photo uploaded successfully"
+          description: Photo uploaded successfully
+          # ritornare id photo?
         "400":
-          description: "Bad request"
+          description: Bad request
+        "401":
+          {$ref: "#/components/responses/UnauthorizedError"}
       security:   
       - bearerAuth: []
+
+  /profile/photos/{id}:
+    delete:
+      tags: ["photo create/delete"]
+      summary: Delete the photo
+      description: |-
+        Delete the photo specified
+      operationId: deletePhoto
+      responses:
+        "200":
+          description: Photo deleted succesfully
+        "401":
+          {$ref: "#/components/responses/UnauthorizedError"}
+        "404":
+          description: Not Found
+      security:
+      - bearerAuth: []
+
+  /follow/{username}:
+    post:
+      parameters: 
+        - {$ref: "#/components/parameters/Username"}
+      tags: ["follow user"]
+      summary: Follow an user
+      description: |-
+        Follow the user with the id specified
+      operationId:  followUser
+      responses:
+        "200":
+          description: User followed correctly
+        "401":
+          {$ref: "#/components/responses/UnauthorizedError"}
+        "404":
+          description: User not found
+      security:
+      - bearerAuth: []
+
+  /unfollow/{username}:
+    post:
+      parameters: 
+        - $ref: "#/components/parameters/Username" 
+      tags: ["unfollow user"]
+      summary:  Unfollow an user
+      description: |-
+        Follow the user with the id specified
+      operationId:  unfollowUser
+      responses:
+        "200":
+          description: User unfollowed correctly
+        "400":
+          description: User not followed
+        "401":
+          {$ref: "#/components/responses/UnauthorizedError"}
+        "404":
+          description: User not found
+      security:
+      - bearerAuth: []
+
+  /ban/{username}:
+    post:
+      parameters: 
+        - {$ref: "#/components/parameters/Username"}
+      tags: ["ban user"]
+      summary:  Ban an user
+      description: |-
+        Ban the user specified
+      operationId:  banUser
+      responses:
+        "200":
+          description: User banned correctly
+        "401":
+          {$ref: "#/components/responses/UnauthorizedError"}
+        "404":
+          description: User not found
+      security:
+      - bearerAuth: []
   
-  /follow:
+  /unban/{username}:
+    post:
+      parameters: 
+        - {$ref: "#/components/parameters/Username"}
+      tags: ["unban user"]
+      summary:  Unban an user
+      description: |-
+        Unban the user specified
+      operationId:  unbanUser
+      responses:
+        "200":
+          description: "User unbanned correctly"
+        "404":
+          description: "User not found"
+        "400":
+          description: "User not banned"
+        "401":
+          {$ref: "#/components/responses/UnauthorizedError"}
+      security:
+      - bearerAuth: []
+  
+  /stream:
+    get:
+      tags: ["get stream"]
+      summary:  Get user photos stream
+      description: |-
+        Return user authenticated' stream of photos and additional information
+        like updating date, and the number of comments and likes for each photo
+      operationId:  getMyStream
+      responses:
+        "200":
+          description: "User stream"
+          content:
+            application/json:
+              schema:
+                type: array
+                items: 
+                  {$ref: "#/components/schemas/Post"}
+        "401":
+          {$ref: "#/components/responses/UnauthorizedError"}
+      security:
+      - bearerAuth: []
 
-    operationId:  followUser
-      
+  /photos/{id}/likes:
+    post:
+      tags: ["photo likes"]
+      summary: Add a like to the photo
+      description: |-
+        If the photo exists, add a like to it.
+        If the photo doesn't exist, nothing happens.
+      operationId: likePhoto
+      responses:
+        "200":
+          description: Like added successfully
+        "401":
+          {$ref: "#/components/responses/UnauthorizedError"}
+        "404":
+          description: Photo not found
+      security: 
+        - bearerAuth: []
+    delete:
+      tags: ["photo likes"]
+      summary:  Remove the like from the photo
+      description: |-
+        If the photo exists and a like was added, it will be removed.
+        If the photo exists and there were no like or no photo is targeted,
+        nothing happens.
+      operationId: unlikePhoto
+      responses:
+        "200":
+          description: Like removed successfully
+        "400":
+          description: Like not found
+        "401":
+          {$ref: "#/components/responses/UnauthorizedError"}
+        "404":
+          description: Photo not found
+      security: 
+        - bearerAuth: []
+  
+  /photos/{id}/comments:
+    post:
+      tags: ["photo comments"]
+      summary:  Add a comment to the photo
+      description: |-
+        If the photo exists, add a comment to it.
+        If the photo doesn't exist, nothing happens.
+      operationId: commentPhoto
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                text:
+                  type: string
+                  example: Good photo
+      responses:
+        "200":
+          description:  Comment added succesfully
+        "401":
+          $ref: {"#/components/responses/UnauthorizedError"}
+        "404":
+          description: Photo not found
+      security: 
+        - bearerAuth: []
 
-
-      
+  /photos/{id}/comments/{commentId}:
+    delete:
+      tags: ["photo comments"]
+      summary:  Delete a comment from the photo
+      description: |-
+        If the photo exists and a comment was added, it will be removed.
+        If the photo doesn't exist, nothing happens.
+      operationId: uncommentPhoto
+      responses:
+        "200":
+          description: Comment removed succesfully from the photo
+        "400":
+          description: Comment not found
+        "401":
+          {$ref: "#/components/responses/UnauthorizedError"}
+        "404":
+          description: Photo not found
+      security: 
+        - bearerAuth: []
