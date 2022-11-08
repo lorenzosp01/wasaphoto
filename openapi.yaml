@@ -30,6 +30,7 @@ components:
       in: path
       required: true
       description: User name
+    
   schemas:
     Name:
       type: string
@@ -95,6 +96,24 @@ components:
         commentsAmount:
           type: integer
           example: 2
+        owner:
+          type: string # da modificare
+          example: Maria
+    Comment:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        text:
+          type: string
+          example: Good photo
+        owner:
+          type: string
+          example: maria # da modificare
+        creation_date:
+          type: string
+          format: date-time
 
 paths:
   /session:
@@ -163,6 +182,7 @@ paths:
   
   /profiles/{username}:
     get:
+      # specificare i parametri
       tags: ["get profile"]
       summary:  Get user profile
       description: |-
@@ -180,6 +200,7 @@ paths:
 
   /profile/photos: 
     post:
+      # specificare i parametri
       tags: ["photo create/delete"]
       summary: Upload a new photo to user profile
       description: |-
@@ -205,6 +226,7 @@ paths:
 
   /profile/photos/{id}:
     delete:
+      # specificare i parametri
       tags: ["photo create/delete"]
       summary: Delete the photo
       description: |-
@@ -324,6 +346,7 @@ paths:
 
   /photos/{id}/likes:
     post:
+      # specificare i parametri
       tags: ["photo likes"]
       summary: Add a like to the photo
       description: |-
@@ -340,6 +363,7 @@ paths:
       security: 
         - bearerAuth: []
     delete:
+      # specificare i parametri
       tags: ["photo likes"]
       summary:  Remove the like from the photo
       description: |-
@@ -359,7 +383,34 @@ paths:
       security: 
         - bearerAuth: []
   
-  /photos/{id}/comments:
+  /photos/{photoId}/comments:
+    parameters:
+      - name: photoId
+        schema:
+          type: integer
+          example: 1
+        required: true
+        in: path
+    get:
+      tags: ["photo comments"]
+      summary:  Retrieve the photo's comments
+      description: |-
+        If the photo exists, retrieve its comments.
+        If the photo doesn't exist, nothing happens.
+      operationId: getPhotoComments
+      responses:
+        "200":
+          description:  Comments retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  {$ref: "#/components/schemas/Comment"}
+        "401":
+          $ref: {"#/components/responses/UnauthorizedError"}
+        "404":
+          description: Photo not found
     post:
       tags: ["photo comments"]
       summary:  Add a comment to the photo
@@ -386,22 +437,45 @@ paths:
       security: 
         - bearerAuth: []
 
-  /photos/{id}/comments/{commentId}:
+  /comments/{commentId}:
+    parameters:
+      - name: commentId
+        schema:
+          type: integer
+          example: 1
+        required: true
+        in: path
+    get:
+      tags: ["photo comments"]
+      summary:  Retrieve a comment
+      description: |-
+        If the comment exists, it will be returned.
+        If the comment doesn't exist, nothing happens.
+      operationId: getComment
+      responses:
+        "200":
+          description: Comment retrieved succesfully
+          content:
+            application/json:
+              schema:
+                {$ref: "#/components/schemas/Comment"}
+        "401":
+          {$ref: "#/components/responses/UnauthorizedError"}
+        "404":
+          description: Comment not found
     delete:
       tags: ["photo comments"]
-      summary:  Delete a comment from the photo
+      summary:  Delete a comment
       description: |-
-        If the photo exists and a comment was added, it will be removed.
-        If the photo doesn't exist, nothing happens.
+        If the comment exists, it will be deleted.
+        If the comment doesn't exist, nothing happens.
       operationId: uncommentPhoto
       responses:
         "200":
           description: Comment removed succesfully from the photo
-        "400":
-          description: Comment not found
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
         "404":
-          description: Photo not found
+          description: Comment not found
       security: 
         - bearerAuth: []
