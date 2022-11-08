@@ -201,7 +201,7 @@ paths:
   /profile/photos: 
     post:
       # specificare i parametri
-      tags: ["photo create/delete"]
+      tags: ["photo handle"]
       summary: Upload a new photo to user profile
       description: |-
         Upload a new photo to user feed 
@@ -227,7 +227,7 @@ paths:
   /profile/photos/{id}:
     delete:
       # specificare i parametri
-      tags: ["photo create/delete"]
+      tags: ["photo handle"]
       summary: Delete the photo
       description: |-
         Delete the photo specified
@@ -242,11 +242,11 @@ paths:
       security:
       - bearerAuth: []
 
-  /following/{username}:
+  /profile/following/{username}:
     parameters: 
         - {$ref: "#/components/parameters/Username"}
     post:
-      tags: ["follow user"]
+      tags: ["following"]
       summary: Follow an user
       description: |-
         Follow the user with the id specified
@@ -261,7 +261,7 @@ paths:
       security:
       - bearerAuth: []
     delete:
-      tags: ["unfollow user"]
+      tags: ["following"]
       summary:  Unfollow an user
       description: |-
         Follow the user with the id specified
@@ -279,7 +279,7 @@ paths:
       - bearerAuth: []
   
 
-  /ban/{username}:
+  /profile/ban/{username}:
     parameters: 
         - {$ref: "#/components/parameters/Username"}
     post:
@@ -411,7 +411,7 @@ paths:
                 items:
                   {$ref: "#/components/schemas/Comment"}
         "401":
-          $ref: {"#/components/responses/UnauthorizedError"}
+          {$ref: "#/components/responses/UnauthorizedError"}
         "404":
           description: Photo not found
     post:
@@ -434,7 +434,7 @@ paths:
         "200":
           description:  Comment added successfully
         "401":
-          $ref: {"#/components/responses/UnauthorizedError"}
+          {$ref: "#/components/responses/UnauthorizedError"}
         "404":
           description: Photo not found
       security: 
