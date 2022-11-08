@@ -32,7 +32,7 @@ components:
       description: User name
     
   schemas:
-    Name:
+    Username:
       type: string
       example: Maria
       pattern: 'ˆ.*?$'
@@ -47,7 +47,7 @@ components:
           description: User identifier
           type: integer
           example: 1
-        name: {$ref: "#/components/schemas/Name"}
+        username: {$ref: "#/components/schemas/Username"}
     Photos:
       title: Photos
       type: array
@@ -63,7 +63,7 @@ components:
           description: User identifier
           type: integer
           example: 1
-        name: {$ref: "#/components/schemas/Name"}
+        username: {$ref: "#/components/schemas/Username"}
         photos:  {$ref: "#/components/schemas/Photos"}
         photosAmount:
           description: Photos amout
@@ -132,7 +132,7 @@ paths:
             schema:
               type: object
               properties:
-                name: {$ref: "#/components/schemas/Name"}
+                usernname: {$ref: "#/components/schemas/Username"}
         required: true
       responses:
         '201':
@@ -234,7 +234,7 @@ paths:
       operationId: deletePhoto
       responses:
         "200":
-          description: Photo deleted succesfully
+          description: Photo deleted successfully
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
         "404":
@@ -242,10 +242,10 @@ paths:
       security:
       - bearerAuth: []
 
-  /follow/{username}:
-    post:
-      parameters: 
+  /following/{username}:
+    parameters: 
         - {$ref: "#/components/parameters/Username"}
+    post:
       tags: ["follow user"]
       summary: Follow an user
       description: |-
@@ -260,11 +260,7 @@ paths:
           description: User not found
       security:
       - bearerAuth: []
-
-  /unfollow/{username}:
-    post:
-      parameters: 
-        - $ref: "#/components/parameters/Username" 
+    delete:
       tags: ["unfollow user"]
       summary:  Unfollow an user
       description: |-
@@ -281,11 +277,12 @@ paths:
           description: User not found
       security:
       - bearerAuth: []
+  
 
   /ban/{username}:
-    post:
-      parameters: 
+    parameters: 
         - {$ref: "#/components/parameters/Username"}
+    post:
       tags: ["ban user"]
       summary:  Ban an user
       description: |-
@@ -294,15 +291,15 @@ paths:
       responses:
         "200":
           description: User banned correctly
+        "400":
+          description: Request user
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
         "404":
           description: User not found
       security:
       - bearerAuth: []
-  
-  /unban/{username}:
-    post:
+    delete:
       parameters: 
         - {$ref: "#/components/parameters/Username"}
       tags: ["unban user"]
@@ -344,9 +341,15 @@ paths:
       security:
       - bearerAuth: []
 
-  /photos/{id}/likes:
+  /photos/{photoId}/likes:
+    parameters:
+      - name: photoId
+        schema:
+          type: integer
+          example: 1
+        required: true
+        in: path
     post:
-      # specificare i parametri
       tags: ["photo likes"]
       summary: Add a like to the photo
       description: |-
@@ -429,7 +432,7 @@ paths:
                   example: Good photo
       responses:
         "200":
-          description:  Comment added succesfully
+          description:  Comment added successfully
         "401":
           $ref: {"#/components/responses/UnauthorizedError"}
         "404":
@@ -454,7 +457,7 @@ paths:
       operationId: getComment
       responses:
         "200":
-          description: Comment retrieved succesfully
+          description: Comment retrieved successfully
           content:
             application/json:
               schema:
@@ -472,7 +475,7 @@ paths:
       operationId: uncommentPhoto
       responses:
         "200":
-          description: Comment removed succesfully from the photo
+          description: Comment removed successfully from the photo
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
         "404":
