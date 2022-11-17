@@ -5,6 +5,7 @@ info:
     WASAPhoto is a webapp that allows users to upload/delete photos, follow other users, 
     view their photos, like them and comment on them.
   version: "1"
+
 components:
   securitySchemes:
     bearerAuth:
@@ -14,6 +15,10 @@ components:
   responses:
     UnauthorizedError:
       description: Access token is missing or invalid
+    PhotoNotFound:
+      description: Photo not found
+    UserNotFound:
+      description: User not found
   parameters:
     UserID:
       schema:
@@ -47,6 +52,7 @@ components:
       required: true
       description: Comment identifier
       in: path
+
   schemas:
     Username:
       type: string
@@ -55,7 +61,7 @@ components:
       minLength: 3
       maxLength: 16
     User:
-      title: User 
+      title: User
       description:  A short description of the user entity
       type: object
       properties:
@@ -140,18 +146,17 @@ components:
         creation_date:
           type: string
           format: date-time
-        photo:
-          type: string
 paths:
-  /{username}:
+  /profiles/{username}:
     get:
       parameters:
         - { $ref: "#/components/parameters/Username" }
       tags: [ "get user profile" ]
-      summary: Get a user profile
+      summary: Gets a user profile
       description: |-
-        Get the profile of the user with the given username if it doesn't
-        belongs to a user who banned the authenticated user.
+        Get the profile of the user with the given username.
+        If the username belongs to a user who banned the authenticated one,
+        an error response will be returned.
       operationId: getUserProfile
       responses:
         "200":
@@ -161,11 +166,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/UserProfile"
         "401":
-            $ref: "#/components/responses/UnauthorizedError"
+          $ref: "#/components/responses/UnauthorizedError"
         "403":
           description: Authenticated user is banned by profile owner
         "404":
-          description: User not found
+          {$ref: "#/components/responses/UserNotFound"}
       security:
         - bearerAuth: [ ]
 
@@ -195,7 +200,7 @@ paths:
               schema:
                 type: object
                 properties:
-                  identifier: 
+                  identifier:
                     type: integer
                     example: 1
 
@@ -209,7 +214,7 @@ paths:
         If who makes the request is not authenticated, an error response will be returned.
         If the request body is not formatted correctly, an error response will be returned.
       operationId:  setMyUserName
-      requestBody: 
+      requestBody:
         content:
           application/json:
             schema: {$ref: "#/components/schemas/User"}
@@ -220,29 +225,29 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/User"}
         "400":
-          description: Username not formatted correctly
+          description: Body not formatted correctly
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
-      security:   
+      security:
         - bearerAuth: []
 
   /profile/photos/:
     post:
       tags: ["manage profile"]
-      summary: Upload a new photo to the authenticated user profile
+      summary: Uploads a new photo to the authenticated user profile
       description: |-
         It adds a new photo to authenticated user profile, the uploaded photo identifier will be returned.
         If the request body is not formatted correctly, an error response will be returned.
         If who makes the request is not authenticated, an error response will be returned.
       operationId:  uploadPhoto
-      requestBody: 
+      requestBody:
         content:
           multipart/form-data:
-            schema: 
+            schema:
               type: object
               properties:
-                image: {$ref: "#/components/schemas/Image"}  
-      responses: 
+                image: {$ref: "#/components/schemas/Image"}
+      responses:
         "200":
           description: Photo uploaded successfully
           content:
@@ -257,15 +262,15 @@ paths:
           description: Photo not formatted correctly
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
-      security:   
-      - bearerAuth: []
+      security:
+        - bearerAuth: []
 
   /profile/photos/{photoId}:
     delete:
       parameters:
         - {$ref: "#/components/parameters/PhotoId"}
       tags: ["manage profile"]
-      summary: Delete the photo of the authenticated user
+      summary: Deletes the photo of the authenticated user
       description: |-
         If a photo with the identifier in path belongs to the user
         authenticated profile, it will be deleted.
@@ -280,16 +285,16 @@ paths:
         "403":
           description: Photo doesn't belong to the authenticated user
         "404":
-          description: Not Found
+          {$ref: "#/components/responses/PhotoNotFound"}
       security:
-      - bearerAuth: []
+        - bearerAuth: []
 
   /profile/following/{username}:
-    parameters: 
-        - {$ref: "#/components/parameters/Username"}
+    parameters:
+      - {$ref: "#/components/parameters/Username"}
     post:
       tags: ["manage profile"]
-      summary:  Follow a user
+      summary:  Follows a user
       description: |-
         Follow the user with the username given in the path if the user is authenticated.
         If the username given belongs to a user already followed, an error response will be returned.
@@ -302,14 +307,14 @@ paths:
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
         "404":
-          description: User not found
+          {$ref: "#/components/responses/UserNotFound"}
         "409":
           description: User already followed
       security:
-      - bearerAuth: []
+        - bearerAuth: []
     delete:
       tags: ["manage profile"]
-      summary:  Unfollow a user
+      summary:  Unfollows a user
       description: |-
         Unfollow the user with the username specified in the path if the user is authenticated.
         If the username given is not found, an error response will be returned.
@@ -322,16 +327,16 @@ paths:
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
         "404":
-          description: User not found
+          {$ref: "#/components/responses/UserNotFound"}
         "409":
           description: User not followed
       security:
-      - bearerAuth: []
+        - bearerAuth: []
 
   /profile/following/:
     get:
       tags: [ "manage profile" ]
-      summary: Get followed users
+      summary: Gets followed users
       description: |-
         Get the list of users followed by the authenticated user.
         If who makes the request is not authenticated, an error response will be returned.
@@ -344,18 +349,18 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/UserProfile"
+                  $ref: "#/components/schemas/User"
         "401":
           { $ref: "#/components/responses/UnauthorizedError" }
       security:
         - bearerAuth: [ ]
 
   /profile/ban/{username}:
-    parameters: 
-        - {$ref: "#/components/parameters/Username"}
+    parameters:
+      - {$ref: "#/components/parameters/Username"}
     post:
       tags: ["manage profile"]
-      summary:  Ban a user
+      summary:  Bans a user
       description: |-
         Ban the user with the username given in the path if the user is authenticated.
         If the username given is not found, an error response will be returned.
@@ -370,14 +375,14 @@ paths:
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
         "404":
-          description: User not found
+          {$ref: "#/components/responses/UserNotFound"}
       security:
-      - bearerAuth: []
+        - bearerAuth: []
     delete:
-      parameters: 
+      parameters:
         - {$ref: "#/components/parameters/Username"}
       tags: ["manage profile"]
-      summary:  Unban a user
+      summary:  Unbans a user
       description: |-
         Unban the user with the username specified in the path if the user is authenticated.
         If the username given is not found, error will be returned.
@@ -390,16 +395,16 @@ paths:
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
         "404":
-          description: User not found
+          {$ref: "#/components/responses/UserNotFound"}
         "409":
           description: User not banned
       security:
-      - bearerAuth: []
+        - bearerAuth: []
 
   /profile/ban/:
     get:
       tags: ["manage profile"]
-      summary:  Get banned users
+      summary:  Gets banned users
       description: |-
         Get the list of users banned by the authenticated user.
         If who makes the request is not authenticated, an error response will be returned.
@@ -412,16 +417,16 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/UserProfile"
+                  $ref: "#/components/schemas/User"
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
       security:
-      - bearerAuth: []
+        - bearerAuth: []
 
   /stream:
     get:
       tags: ["stream"]
-      summary:  Get authenticated user photos stream
+      summary:  Gets authenticated user photos stream
       description: |-
         Return authenticated user' stream of photos (followed users ones) in 
         reverse chronological order and additional information
@@ -435,19 +440,20 @@ paths:
             application/json:
               schema:
                 type: array
-                items: 
+                items:
                   {$ref: "#/components/schemas/PhotoWithOwner"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
       security:
-      - bearerAuth: []
+        - bearerAuth: []
 
-  /photos/{photoId}/likes:
+  /profiles/{username}/photos/{photoId}/likes:
     parameters:
       - {$ref: "#/components/parameters/PhotoId"}
+      - {$ref: "#/components/parameters/Username"}
     post:
       tags: ["photo interaction"]
-      summary: Add a like to the photo
+      summary: Adds a like to the photo
       description: |-
         If the photo with the id given in path exists, a user is authenticated, it adds a like.
         If the authenticated user already added like to the photo, an error response will be returned.
@@ -460,14 +466,14 @@ paths:
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
         "404":
-          description: Photo not found
+          {$ref: "#/components/responses/PhotoNotFound"}
         "409":
           description: Like already added
-      security: 
+      security:
         - bearerAuth: []
     delete:
       tags: ["photo interaction"]
-      summary:  Remove like from the photo
+      summary:  Removes like from the photo
       description: |-
         If the photo with the id given in path exists, the authenticated user added a like previously, it will be removed.
         If the photo exists and the authenticated user didn't add like to it, an error response will be returned.
@@ -480,18 +486,19 @@ paths:
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
         "404":
-          description: Photo not found
+          {$ref: "#/components/responses/PhotoNotFound"}
         "409":
           description: Like not found
       security:
         - bearerAuth: []
 
-  /photos/{photoId}/comments/:
+  /profiles/{username}/photos/{photoId}/comments/:
     parameters:
       - {$ref: "#/components/parameters/PhotoId"}
+      - {$ref: "#/components/parameters/Username" }
     get:
       tags: ["photo interaction"]
-      summary:  Retrieve the photo's comments
+      summary:  Retrieves the photo's comments
       description: |-
         If the photo exists, retrieve its comments.
         If the photo doesn't exist, an error response will be returned.
@@ -506,10 +513,10 @@ paths:
                 items:
                   {$ref: "#/components/schemas/Comment"}
         "404":
-          description: Photo not found
+          {$ref: "#/components/responses/PhotoNotFound"}
     post:
       tags: ["photo interaction"]
-      summary:  Add a comment to the photo
+      summary:  Adds a comment to the photo
       description: |-
         If the photo exists, add a comment to it from the authenticated user.
         If who makes the request is not authenticated, an error response will be returned.
@@ -533,22 +540,22 @@ paths:
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
         "404":
-          description: Photo not found
-      security: 
+          {$ref: "#/components/responses/PhotoNotFound"}
+      security:
         - bearerAuth: []
 
-  /photos/{photoId}/comments/{commentId}:
+  /profiles/{username}/photos/{photoId}/comments/{commentId}:
     parameters:
       - { $ref: "#/components/parameters/PhotoId" }
       - { $ref: "#/components/parameters/CommentId" }
+      - { $ref: "#/components/parameters/Username" }
     delete:
       tags: ["photo interaction"]
-      summary: Delete a comment
+      summary: Deletes a comment
       description: |-
         If the photo exists, the comment with the id given in the path belongs to the authenticated user, delete it.
         If the photo exists and there is the comment with the id given in the path but doesn't belong to the authenticated user, an error response will be returned.
         If who makes the request is not authenticated, an error response will be returned.
-        If the photo doesn't exist, an error response will be returned.
       operationId: uncommentPhoto
       responses:
         "200":
