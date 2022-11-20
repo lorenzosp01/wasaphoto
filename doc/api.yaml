@@ -15,49 +15,112 @@ components:
   responses:
     UnauthorizedError:
       description: Access token is missing or invalid
-    PhotoNotFound:
+      content:
+        text/plain:
+          schema:
+            description: UnauthorizedError response
+            type: string
+            example: UnauthorizedError
+    BadRequest:
+      description: Request body wrongly formatted
+      content:
+        text/plain:
+          schema:
+            description:  Request body wrongly formatted
+            type: string
+            example: Comment text is empty
+    ObjectNotFoundError:
       description: Photo not found
-    UserNotFound:
-      description: User not found
+      content:
+        text/plain:
+          schema:
+            description: ObjectNotFoundError response
+            type: string
+            example: User not found
+    ObjectDeletedSuccessfully:
+      description: Response for successfully created object
+      content:
+        text/plain:
+          schema:
+            description: ObjectDeletedSuccessfully response
+            type: string
+            example: Object deleted 
+    ConflictResourceStateError:
+      description: Conflict with the current resource state
+      content:
+        text/plain:
+          schema:
+            description: ConflictResourceStateError response
+            type: string
+            example: User already banned
+    ForbiddenError:
+      description: Insufficient rights to a resource
+      content:
+        text/plain:
+          schema:
+            description: ForbiddenError response
+            type: string
+            example: Unauthorized to delete that comment
+    FollwingRelationChanged:
+      description: Following relation has been changed
+      content:
+        text/plain:
+          schema:
+            description: Following relation has been changed
+            type: string
+            example: User unfollowed correctly
+    UserBanStateChanged:
+      description: User ban state has been changed
+      content:
+        text/plain:
+          schema:
+            description: User ban state has been changed
+            type: string
+            example: User x has been banned
+    ObjectCreatedSuccessfully:
+      description: Object created successfully
+      content:
+        text/plain:
+          schema:
+            description: Object created successfully
+            type: string
+            example: Like added successfully
+
   parameters:
-    UserID:
-      schema:
-        type: integer
-        example: 1
-      name: userId
-      in: path
-      required: true
-      description: User identifier
-    Username:
+    username:
       schema:
         type: string
+        pattern: '^[a-zA-Z0-9_.]*$'
         example: maria00
+        minLength: 3
+        maxLength: 16
       name: username
       in: path
       required: true
       description: User name
-    PhotoId:
-      name: photoId
+    photo_id:
+      name: photo_id
       schema:
         type: integer
         example: 1
       required: true
       description: Photo identifier
       in: path
-    CommentId:
-      name: commentId
+    comment_id:
+      name: comment_id
       schema:
         type: integer
         example: 1
       required: true
       description: Comment identifier
       in: path
-
+    
   schemas:
     Username:
+      description: User name
       type: string
       example: Maria
-      pattern: 'ˆ.*?$'
+      pattern: '^[a-zA-Z0-9_.]*$'
       minLength: 3
       maxLength: 16
     User:
@@ -79,78 +142,90 @@ components:
           {$ref: "#/components/schemas/User"}
         photos:
           type: array
+          description: User photos
           items: {$ref: "#/components/schemas/Photo"}
-        photosAmount:
+          minItems: 0
+          maxItems: 10
+        photos_amount:
           description: Photos amount
           type: integer
           example: 1
-        followersAmount:
+        followers_amount:
           description: Number of followers
           type: integer
           example: 10
-        followingAmount:
+        following_amount:
           description: Number of following users
           type: integer
-          example: 10
+          example: 10 
+    Uploaded_at:
+      type: string
+      format: date-time
+      example: 2017-07-21T17:32:28Z
+      description: uploaded time
     Image:
       type: string
       format: binary
+      description: Image attached to photo
     Photo:
       type: object
       properties:
         id:
+          description: photo identifier
           type: integer
           example: 1
         image:
           { $ref: "#/components/schemas/Image" }
-        uploadedAt:
-          type: string
-          format: date-time
-          example: 2017-07-21T17:32:28Z
-        likeAmount:
+        uploaded_at:
+         { $ref: "#/components/schemas/Uploaded_at"}
+        like_amount:
           type: integer
+          description: number of photo likes
           example: 10
-        commentsAmount:
+        comments_amount:
           type: integer
+          description: number of photo comments
           example: 2
     PhotoWithOwner:
       type: object
       properties:
         id:
           type: integer
+          description: photo ID
           example: 1
         image:
           { $ref: "#/components/schemas/Image" }
-        uploadedAt:
-          type: string
-          format: date-time
-          example: 2017-07-21T17:32:28Z
-        likeAmount:
+        uploaded_at:
+         { $ref: "#/components/schemas/Uploaded_at"}
+        like_amount:
           type: integer
           example: 10
-        commentsAmount:
+          description: number of photo likes
+        comments_amount:
           type: integer
           example: 2
+          description: number of photo comments
         owner:
           { $ref: "#/components/schemas/User" }
     Comment:
       type: object
       properties:
         id:
+          description: Comment identifier
           type: integer
           example: 1
         text:
           type: string
+          description: Content of the comment
           example: Good photo
         owner:  {$ref: "#/components/schemas/Username"}
-        creation_date:
-          type: string
-          format: date-time
+        uploaded_at:
+         { $ref: "#/components/schemas/Uploaded_at"}
 paths:
   /profiles/{username}:
     get:
       parameters:
-        - { $ref: "#/components/parameters/Username" }
+        - { $ref: "#/components/parameters/username" }
       tags: [ "get user profile" ]
       summary: Gets a user profile
       description: |-
@@ -168,9 +243,9 @@ paths:
         "401":
           $ref: "#/components/responses/UnauthorizedError"
         "403":
-          description: Authenticated user is banned by profile owner
+          {$ref: "#/components/responses/ForbiddenError"}
         "404":
-          {$ref: "#/components/responses/UserNotFound"}
+          {$ref: "#/components/responses/ObjectNotFoundError"}
       security:
         - bearerAuth: [ ]
 
@@ -188,6 +263,7 @@ paths:
         content:
           application/json:
             schema:
+              description: User name
               type: object
               properties:
                 username: {$ref: "#/components/schemas/Username"}
@@ -198,6 +274,7 @@ paths:
           content:
             application/json:
               schema:
+                description: User entity
                 type: object
                 properties:
                   identifier:
@@ -225,7 +302,7 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/User"}
         "400":
-          description: Body not formatted correctly
+          {$ref: "#/components/responses/BadRequest"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
       security:
@@ -244,31 +321,24 @@ paths:
         content:
           multipart/form-data:
             schema:
+              description: Image object
               type: object
               properties:
                 image: {$ref: "#/components/schemas/Image"}
       responses:
         "200":
-          description: Photo uploaded successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id:
-                    type: integer
-                    example: 1
+          {$ref: "#/components/responses/ObjectCreatedSuccessfully"}
         "400":
-          description: Photo not formatted correctly
+          {$ref: "#/components/responses/BadRequest"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
       security:
         - bearerAuth: []
 
-  /profile/photos/{photoId}:
+  /profile/photos/{photo_id}:
     delete:
       parameters:
-        - {$ref: "#/components/parameters/PhotoId"}
+        - {$ref: "#/components/parameters/photo_id"}
       tags: ["manage profile"]
       summary: Deletes the photo of the authenticated user
       description: |-
@@ -279,19 +349,19 @@ paths:
       operationId: deletePhoto
       responses:
         "200":
-          description: Photo deleted successfully
+          {$ref: "#/components/responses/ObjectDeletedSuccessfully"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
         "403":
-          description: Photo doesn't belong to the authenticated user
+          {$ref: "#/components/responses/ForbiddenError"}
         "404":
-          {$ref: "#/components/responses/PhotoNotFound"}
+          {$ref: "#/components/responses/ObjectNotFoundError"}
       security:
         - bearerAuth: []
 
   /profile/following/{username}:
     parameters:
-      - {$ref: "#/components/parameters/Username"}
+      - {$ref: "#/components/parameters/username"}
     post:
       tags: ["manage profile"]
       summary:  Follows a user
@@ -303,13 +373,13 @@ paths:
       operationId:  followUser
       responses:
         "200":
-          description: User followed correctly
+          {$ref: "#/components/responses/FollwingRelationChanged"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
         "404":
-          {$ref: "#/components/responses/UserNotFound"}
+          {$ref: "#/components/responses/ObjectNotFoundError"}
         "409":
-          description: User already followed
+          {$ref: "#/components/responses/ConflictResourceStateError"}
       security:
         - bearerAuth: []
     delete:
@@ -323,13 +393,13 @@ paths:
       operationId:  unfollowUser
       responses:
         "200":
-          description: User unfollowed correctly
+          {$ref: "#/components/responses/FollwingRelationChanged"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
         "404":
-          {$ref: "#/components/responses/UserNotFound"}
+          {$ref: "#/components/responses/ObjectNotFoundError"}
         "409":
-          description: User not followed
+          {$ref: "#/components/responses/ConflictResourceStateError"}
       security:
         - bearerAuth: []
 
@@ -347,9 +417,14 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/User"
+                description: Object with the followed users list
+                type: object
+                properties:
+                  users:
+                     description: Followed users
+                     type:  array
+                     items: {$ref: "#/components/schemas/User"}
+                     minItems: 0
         "401":
           { $ref: "#/components/responses/UnauthorizedError" }
       security:
@@ -357,7 +432,7 @@ paths:
 
   /profile/ban/{username}:
     parameters:
-      - {$ref: "#/components/parameters/Username"}
+      - {$ref: "#/components/parameters/username"}
     post:
       tags: ["manage profile"]
       summary:  Bans a user
@@ -369,18 +444,16 @@ paths:
       operationId:  banUser
       responses:
         "200":
-          description: User banned correctly
-        "409":
-          description: User already banned
+          {$ref: "#/components/responses/UserBanStateChanged"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
         "404":
-          {$ref: "#/components/responses/UserNotFound"}
+          {$ref: "#/components/responses/ObjectNotFoundError"}
+        "409":
+          {$ref: "#/components/responses/ConflictResourceStateError"}
       security:
         - bearerAuth: []
     delete:
-      parameters:
-        - {$ref: "#/components/parameters/Username"}
       tags: ["manage profile"]
       summary:  Unbans a user
       description: |-
@@ -391,13 +464,13 @@ paths:
       operationId:  unbanUser
       responses:
         "200":
-          description: User unbanned correctly
+          {$ref: "#/components/responses/UserBanStateChanged"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
         "404":
-          {$ref: "#/components/responses/UserNotFound"}
+          {$ref: "#/components/responses/ObjectNotFoundError"}
         "409":
-          description: User not banned
+          {$ref: "#/components/responses/ConflictResourceStateError"}
       security:
         - bearerAuth: []
 
@@ -411,13 +484,18 @@ paths:
       operationId:  getBannedUsers
       responses:
         "200":
-          description: List of banned users
+          description: List of the banned users
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/User"
+                description: Object with the banned users list
+                type: object
+                properties:
+                  users:
+                     description: Banned users
+                     type:  array
+                     minItems: 0
+                     items: {$ref: "#/components/schemas/User"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
       security:
@@ -439,18 +517,24 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  {$ref: "#/components/schemas/PhotoWithOwner"}
+                description: Object with user stream
+                type: object
+                properties:
+                  photos:
+                     description: Photos of user stream
+                     type:  array
+                     minItems: 0
+                     maxItems: 10
+                     items: {$ref: "#/components/schemas/PhotoWithOwner"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
       security:
         - bearerAuth: []
 
-  /profiles/{username}/photos/{photoId}/likes:
+  /profiles/{username}/photos/{photo_id}/likes:
     parameters:
-      - {$ref: "#/components/parameters/PhotoId"}
-      - {$ref: "#/components/parameters/Username"}
+      - {$ref: "#/components/parameters/photo_id"}
+      - {$ref: "#/components/parameters/username"}
     post:
       tags: ["photo interaction"]
       summary: Adds a like to the photo
@@ -461,14 +545,14 @@ paths:
         If the photo doesn't exist, an error response will be returned.
       operationId: likePhoto
       responses:
-        "200":
-          description: Like added successfully
+        "201":
+          {$ref: "#/components/responses/ObjectCreatedSuccessfully"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
         "404":
-          {$ref: "#/components/responses/PhotoNotFound"}
+          {$ref: "#/components/responses/ObjectNotFoundError"}
         "409":
-          description: Like already added
+          {$ref: "#/components/responses/ConflictResourceStateError"}
       security:
         - bearerAuth: []
     delete:
@@ -482,20 +566,20 @@ paths:
       operationId: unlikePhoto
       responses:
         "200":
-          description: Like deleted successfully
+          {$ref: "#/components/responses/ObjectDeletedSuccessfully"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
         "404":
-          {$ref: "#/components/responses/PhotoNotFound"}
+          {$ref: "#/components/responses/ObjectNotFoundError"}
         "409":
-          description: Like not found
+          {$ref: "#/components/responses/ConflictResourceStateError"}
       security:
         - bearerAuth: []
 
-  /profiles/{username}/photos/{photoId}/comments/:
+  /profiles/{username}/photos/{photo_id}/comments/:
     parameters:
-      - {$ref: "#/components/parameters/PhotoId"}
-      - {$ref: "#/components/parameters/Username" }
+      - {$ref: "#/components/parameters/photo_id"}
+      - {$ref: "#/components/parameters/username" }
     get:
       tags: ["photo interaction"]
       summary:  Retrieves the photo's comments
@@ -505,15 +589,21 @@ paths:
       operationId: getPhotoComments
       responses:
         "200":
-          description:  Comments retrieved successfully
+          description: List of photo comments
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  {$ref: "#/components/schemas/Comment"}
+                description: Object with photo comments
+                type: object
+                properties:
+                  comments:
+                     description: Comments of the photo
+                     type:  array
+                     items: {$ref: "#/components/schemas/Comment"}
+                     minItems: 0
+                     maxItems: 999
         "404":
-          {$ref: "#/components/responses/PhotoNotFound"}
+          {$ref: "#/components/responses/ObjectNotFoundError"}
     post:
       tags: ["photo interaction"]
       summary:  Adds a comment to the photo
@@ -527,28 +617,33 @@ paths:
         content:
           application/json:
             schema:
+              description: Cbject with the content of the comment
               type: object
               properties:
                 text:
+                  description: Content of the comment
                   type: string
+                  pattern: '.*'
+                  minLength: 1
+                  maxLength: 500
                   example: Good photo
       responses:
-        "200":
-          description:  Comment added successfully
+        "201":
+          {$ref: "#/components/responses/ObjectCreatedSuccessfully"}
         "400":
-          description:  Comment text is not formatted correctly
+          {$ref: "#/components/responses/BadRequest"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
         "404":
-          {$ref: "#/components/responses/PhotoNotFound"}
+          {$ref: "#/components/responses/ObjectNotFoundError"}
       security:
         - bearerAuth: []
 
-  /profiles/{username}/photos/{photoId}/comments/{commentId}:
+  /profiles/{username}/photos/{photo_id}/comments/{comment_id}:
     parameters:
-      - { $ref: "#/components/parameters/PhotoId" }
-      - { $ref: "#/components/parameters/CommentId" }
-      - { $ref: "#/components/parameters/Username" }
+      - { $ref: "#/components/parameters/photo_id" }
+      - { $ref: "#/components/parameters/comment_id"}
+      - { $ref: "#/components/parameters/username" }
     delete:
       tags: ["photo interaction"]
       summary: Deletes a comment
@@ -559,11 +654,11 @@ paths:
       operationId: uncommentPhoto
       responses:
         "200":
-          description: Comment deleted successfully from the photo
+          {$ref: "#/components/responses/ObjectDeletedSuccessfully"}
         "401":
           { $ref: "#/components/responses/UnauthorizedError" }
         "403":
-          description: Comment not belongs to the authenticated user
+          {$ref: "#/components/responses/ForbiddenError"}
         "404":
           description: Comment not found
       security:
