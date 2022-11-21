@@ -5,6 +5,17 @@ info:
     WASAPhoto is a webapp that allows users to upload/delete photos, follow other users, 
     view their photos, like them and comment on them.
   version: "1"
+tags:
+  - name: get user profile
+    description: Returns user profile
+  - name: photo interaction
+    description: Operations about photos
+  - name: stream
+    description: Returns user stream
+  - name: login
+    description: Login user
+  - name: manage profile
+    description: Manage user profile
 
 components:
   securitySchemes:
@@ -61,7 +72,7 @@ components:
             description: ForbiddenError response
             type: string
             example: Unauthorized to delete that comment
-    FollwingRelationChanged:
+    FollowingRelationChanged:
       description: Following relation has been changed
       content:
         text/plain:
@@ -221,6 +232,54 @@ components:
         owner:  {$ref: "#/components/schemas/Username"}
         uploaded_at:
          { $ref: "#/components/schemas/Uploaded_at"}
+    PhotoComments:
+      description: Object with photo comments
+      type: object
+      properties:
+        comments:
+          description: Comments of the photo
+          type: array
+          items: { $ref: "#/components/schemas/Comment" }
+          minItems: 0
+          maxItems: 999
+    UserStream:
+      description: Object with user stream
+      type: object
+      properties:
+        photos:
+          description: Photos of user stream
+          type: array
+          minItems: 0
+          maxItems: 10
+          items: { $ref: "#/components/schemas/PhotoWithOwner" }
+    BannedUsers:
+      description: Object with the banned users list
+      type: object
+      properties:
+        users:
+          description: Banned users
+          type: array
+          minItems: 0
+          maxItems: 100
+          items: { $ref: "#/components/schemas/User" }
+    FollowedUsers:
+      description: Object with the followed users list
+      type: object
+      properties:
+        users:
+          description: Followed users
+          type: array
+          items: { $ref: "#/components/schemas/User" }
+          minItems: 0
+          maxItems: 100
+    UserEntity:
+      description: User entity
+      type: object
+      properties:
+        identifier:
+          description: User identifier
+          type: integer
+          example: 1
 paths:
   /profiles/{username}:
     get:
@@ -274,12 +333,7 @@ paths:
           content:
             application/json:
               schema:
-                description: User entity
-                type: object
-                properties:
-                  identifier:
-                    type: integer
-                    example: 1
+                {$ref: "#/components/schemas/UserEntity"}
 
   /profile/username:
     put:
@@ -296,7 +350,7 @@ paths:
           application/json:
             schema: {$ref: "#/components/schemas/User"}
       responses:
-        "200":
+        "202":
           description: Username set successfully
           content:
             application/json:
@@ -326,7 +380,7 @@ paths:
               properties:
                 image: {$ref: "#/components/schemas/Image"}
       responses:
-        "200":
+        "201":
           {$ref: "#/components/responses/ObjectCreatedSuccessfully"}
         "400":
           {$ref: "#/components/responses/BadRequest"}
@@ -348,7 +402,7 @@ paths:
         If a photo is not found, an error response will be returned.
       operationId: deletePhoto
       responses:
-        "200":
+        "202":
           {$ref: "#/components/responses/ObjectDeletedSuccessfully"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
@@ -372,8 +426,8 @@ paths:
         If who makes the request is not authenticated, an error response will be returned.
       operationId:  followUser
       responses:
-        "200":
-          {$ref: "#/components/responses/FollwingRelationChanged"}
+        "202":
+          {$ref: "#/components/responses/FollowingRelationChanged"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
         "404":
@@ -392,8 +446,8 @@ paths:
         If who makes the request is not authenticated, an error response will be returned.
       operationId:  unfollowUser
       responses:
-        "200":
-          {$ref: "#/components/responses/FollwingRelationChanged"}
+        "202":
+          {$ref: "#/components/responses/FollowingRelationChanged"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
         "404":
@@ -417,14 +471,8 @@ paths:
           content:
             application/json:
               schema:
-                description: Object with the followed users list
-                type: object
-                properties:
-                  users:
-                     description: Followed users
-                     type:  array
-                     items: {$ref: "#/components/schemas/User"}
-                     minItems: 0
+                { $ref: "#/components/schemas/FollowedUsers" }
+
         "401":
           { $ref: "#/components/responses/UnauthorizedError" }
       security:
@@ -443,7 +491,7 @@ paths:
         If who makes the request is not authenticated, an error response will be returned.
       operationId:  banUser
       responses:
-        "200":
+        "202":
           {$ref: "#/components/responses/UserBanStateChanged"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
@@ -463,7 +511,7 @@ paths:
         If who makes the request is not authenticated, an error response will be returned.
       operationId:  unbanUser
       responses:
-        "200":
+        "202":
           {$ref: "#/components/responses/UserBanStateChanged"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
@@ -488,14 +536,7 @@ paths:
           content:
             application/json:
               schema:
-                description: Object with the banned users list
-                type: object
-                properties:
-                  users:
-                     description: Banned users
-                     type:  array
-                     minItems: 0
-                     items: {$ref: "#/components/schemas/User"}
+                {$ref: "#/components/schemas/BannedUsers"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
       security:
@@ -517,15 +558,7 @@ paths:
           content:
             application/json:
               schema:
-                description: Object with user stream
-                type: object
-                properties:
-                  photos:
-                     description: Photos of user stream
-                     type:  array
-                     minItems: 0
-                     maxItems: 10
-                     items: {$ref: "#/components/schemas/PhotoWithOwner"}
+                {$ref: "#/components/schemas/UserStream"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
       security:
@@ -565,7 +598,7 @@ paths:
         If the photo doesn't exist, an error response will be returned.
       operationId: unlikePhoto
       responses:
-        "200":
+        "202":
           {$ref: "#/components/responses/ObjectDeletedSuccessfully"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
@@ -593,15 +626,7 @@ paths:
           content:
             application/json:
               schema:
-                description: Object with photo comments
-                type: object
-                properties:
-                  comments:
-                     description: Comments of the photo
-                     type:  array
-                     items: {$ref: "#/components/schemas/Comment"}
-                     minItems: 0
-                     maxItems: 999
+                {$ref: "#/components/schemas/PhotoComments"}
         "404":
           {$ref: "#/components/responses/ObjectNotFoundError"}
     post:
@@ -653,7 +678,7 @@ paths:
         If who makes the request is not authenticated, an error response will be returned.
       operationId: uncommentPhoto
       responses:
-        "200":
+        "202":
           {$ref: "#/components/responses/ObjectDeletedSuccessfully"}
         "401":
           { $ref: "#/components/responses/UnauthorizedError" }
