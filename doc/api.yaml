@@ -6,8 +6,6 @@ info:
     view their photos, like them and comment on them.
   version: "1"
 tags:
-  - name: get user profile
-    description: Returns user profile
   - name: photo interaction
     description: Operations about photos
   - name: stream
@@ -98,17 +96,22 @@ components:
             example: Like added successfully
 
   parameters:
-    username:
+    user_id:
       schema:
-        type: string
-        pattern: '^[a-zA-Z0-9_.]*$'
-        example: maria00
-        minLength: 3
-        maxLength: 16
-      name: username
+        type: integer
+        example: 1
+      name: user_id
       in: path
       required: true
-      description: User name
+      description: User identifier
+    auth_user_id:
+      schema:
+        type: integer
+        example: 1
+      name: auth_user_id
+      in: path
+      required: true
+      description: User identifier
     photo_id:
       name: photo_id
       schema:
@@ -173,11 +176,15 @@ components:
       type: string
       format: date-time
       example: 2017-07-21T17:32:28Z
+      minLength: 1
+      maxLength: 30
       description: uploaded time
     Image:
       type: string
       format: binary
       description: Image attached to photo
+      minLength: 1
+      maxLength: 1000000
     Photo:
       type: object
       properties:
@@ -220,6 +227,7 @@ components:
           { $ref: "#/components/schemas/User" }
     Comment:
       type: object
+      description: Comment on a photo
       properties:
         id:
           description: Comment identifier
@@ -229,6 +237,9 @@ components:
           type: string
           description: Content of the comment
           example: Good photo
+          minLength: 1
+          maxLength: 100
+          pattern: '^[a-zA-Z0-9_.-]*$'
         owner:  {$ref: "#/components/schemas/Username"}
         uploaded_at:
          { $ref: "#/components/schemas/Uploaded_at"}
@@ -280,34 +291,12 @@ components:
           description: User identifier
           type: integer
           example: 1
+    UsernameObject:
+      description: User name
+      type: object
+      properties:
+        username: { $ref: "#/components/schemas/Username" }
 paths:
-  /profiles/{username}:
-    get:
-      parameters:
-        - { $ref: "#/components/parameters/username" }
-      tags: [ "get user profile" ]
-      summary: Gets a user profile
-      description: |-
-        Get the profile of the user with the given username.
-        If the username belongs to a user who banned the authenticated one,
-        an error response will be returned.
-      operationId: getUserProfile
-      responses:
-        "200":
-          description: User profile
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/UserProfile"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          {$ref: "#/components/responses/ForbiddenError"}
-        "404":
-          {$ref: "#/components/responses/ObjectNotFoundError"}
-      security:
-        - bearerAuth: [ ]
-
   /session:
     post:
       tags: ["login"]
@@ -322,10 +311,7 @@ paths:
         content:
           application/json:
             schema:
-              description: User name
-              type: object
-              properties:
-                username: {$ref: "#/components/schemas/Username"}
+              {$ref: "#/components/schemas/UsernameObject"}
         required: true
       responses:
         '201':
@@ -335,35 +321,66 @@ paths:
               schema:
                 {$ref: "#/components/schemas/UserEntity"}
 
-  /profile/username:
+  /profiles/{user_id}:
+    get:
+      parameters:
+        - { $ref: "#/components/parameters/user_id" }
+      tags: [ "manage profile" ]
+      summary: Gets a user profile
+      description: |-
+        Get the profile of the user with the given user_id.
+        If the user_id belongs to a user who banned the authenticated one,
+        an error response will be returned.
+      operationId: getUserProfile
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          { $ref: "#/components/responses/ForbiddenError" }
+        "404":
+          { $ref: "#/components/responses/ObjectNotFoundError" }
+      security:
+        - bearerAuth: [ ]
+
+  /profiles/{auth_user_id}/name:
     put:
-      tags: ["manage profile"]
+      parameters:
+        - { $ref: "#/components/parameters/auth_user_id" }
+      tags: [ "manage profile" ]
       summary: Sets a new username for the authenticated user
       description: |-
         If the user is authenticated, it will change
         his username and return the new user resource.
         If who makes the request is not authenticated, an error response will be returned.
         If the request body is not formatted correctly, an error response will be returned.
-      operationId:  setMyUserName
+      operationId: setMyUserName
       requestBody:
         content:
           application/json:
-            schema: {$ref: "#/components/schemas/User"}
+            schema: { $ref: "#/components/schemas/UsernameObject" }
       responses:
-        "202":
+        "200":
           description: Username set successfully
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/User"}
+              schema: { $ref: "#/components/schemas/User" }
         "400":
-          {$ref: "#/components/responses/BadRequest"}
+          { $ref: "#/components/responses/BadRequest" }
         "401":
-          {$ref: "#/components/responses/UnauthorizedError"}
+          { $ref: "#/components/responses/UnauthorizedError" }
       security:
-        - bearerAuth: []
+        - bearerAuth: [ ]
 
-  /profile/photos/:
+  /profiles/{auth_user_id}/photos/:
     post:
+      parameters:
+        - { $ref: "#/components/parameters/auth_user_id" }
       tags: ["manage profile"]
       summary: Uploads a new photo to the authenticated user profile
       description: |-
@@ -389,10 +406,11 @@ paths:
       security:
         - bearerAuth: []
 
-  /profile/photos/{photo_id}:
+  /profiles/{auth_user_id}/photos/{photo_id}:
     delete:
       parameters:
         - {$ref: "#/components/parameters/photo_id"}
+        - {$ref: "#/components/parameters/auth_user_id"}
       tags: ["manage profile"]
       summary: Deletes the photo of the authenticated user
       description: |-
@@ -402,7 +420,7 @@ paths:
         If a photo is not found, an error response will be returned.
       operationId: deletePhoto
       responses:
-        "202":
+        "200":
           {$ref: "#/components/responses/ObjectDeletedSuccessfully"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
@@ -413,20 +431,21 @@ paths:
       security:
         - bearerAuth: []
 
-  /profile/following/{username}:
+  /profiles/{auth_user_id}/following/{user_id}:
     parameters:
-      - {$ref: "#/components/parameters/username"}
-    post:
+      - {$ref: "#/components/parameters/user_id" }
+      - {$ref: "#/components/parameters/auth_user_id"}
+    put:
       tags: ["manage profile"]
       summary:  Follows a user
       description: |-
-        Follow the user with the username given in the path if the user is authenticated.
-        If the username given belongs to a user already followed, an error response will be returned.
-        If the username given is not found, an error response will be returned.
+        Follow the user with the user id given in the path if the user is authenticated.
+        If the user id given belongs to a user already followed, an error response will be returned.
+        If the user id given is not found, an error response will be returned.
         If who makes the request is not authenticated, an error response will be returned.
       operationId:  followUser
       responses:
-        "202":
+        "200":
           {$ref: "#/components/responses/FollowingRelationChanged"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
@@ -440,13 +459,13 @@ paths:
       tags: ["manage profile"]
       summary:  Unfollows a user
       description: |-
-        Unfollow the user with the username specified in the path if the user is authenticated.
-        If the username given is not found, an error response will be returned.
-        If the username given belongs to a user not followed, an error response will be returned.
+        Unfollow the user with the user_id specified in the path if the user is authenticated.
+        If the user_id given is not found, an error response will be returned.
+        If the user_id given belongs to a user not followed, an error response will be returned.
         If who makes the request is not authenticated, an error response will be returned.
       operationId:  unfollowUser
       responses:
-        "202":
+        "200":
           {$ref: "#/components/responses/FollowingRelationChanged"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
@@ -457,7 +476,9 @@ paths:
       security:
         - bearerAuth: []
 
-  /profile/following/:
+  /profiles/{auth_user_id}/following/:
+    parameters:
+      - {$ref: "#/components/parameters/auth_user_id"}
     get:
       tags: [ "manage profile" ]
       summary: Gets followed users
@@ -478,20 +499,21 @@ paths:
       security:
         - bearerAuth: [ ]
 
-  /profile/ban/{username}:
+  /profiles/{auth_user_id}/ban/{user_id}:
     parameters:
-      - {$ref: "#/components/parameters/username"}
-    post:
+      - {$ref: "#/components/parameters/user_id" }
+      - {$ref: "#/components/parameters/auth_user_id"}
+    put:
       tags: ["manage profile"]
       summary:  Bans a user
       description: |-
-        Ban the user with the username given in the path if the user is authenticated.
-        If the username given is not found, an error response will be returned.
-        If the username given belongs to a user already banned, an error response will be returned.
+        Ban the user with the user_id given in the path if the user is authenticated.
+        If the user_id given is not found, an error response will be returned.
+        If the user_id given belongs to a user already banned, an error response will be returned.
         If who makes the request is not authenticated, an error response will be returned.
       operationId:  banUser
       responses:
-        "202":
+        "200":
           {$ref: "#/components/responses/UserBanStateChanged"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
@@ -505,13 +527,13 @@ paths:
       tags: ["manage profile"]
       summary:  Unbans a user
       description: |-
-        Unban the user with the username specified in the path if the user is authenticated.
-        If the username given is not found, error will be returned.
-        If the username given belongs to a user not banned, error will be returned.
+        Unban the user with the user_id specified in the path if the user is authenticated.
+        If the user_id given is not found, error will be returned.
+        If the user_id given belongs to a user not banned, error will be returned.
         If who makes the request is not authenticated, an error response will be returned.
       operationId:  unbanUser
       responses:
-        "202":
+        "200":
           {$ref: "#/components/responses/UserBanStateChanged"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
@@ -522,7 +544,9 @@ paths:
       security:
         - bearerAuth: []
 
-  /profile/ban/:
+  /profiles/{auth_user_id}/ban/:
+    parameters:
+      - {$ref: "#/components/parameters/auth_user_id"}
     get:
       tags: ["manage profile"]
       summary:  Gets banned users
@@ -564,11 +588,12 @@ paths:
       security:
         - bearerAuth: []
 
-  /profiles/{username}/photos/{photo_id}/like:
+  /profiles/{user_id}/photos/{photo_id}/likes/{auth_user_id}:
     parameters:
       - {$ref: "#/components/parameters/photo_id"}
-      - {$ref: "#/components/parameters/username"}
-    post:
+      - {$ref: "#/components/parameters/user_id" }
+      - {$ref: "#/components/parameters/auth_user_id"}
+    put:
       tags: ["photo interaction"]
       summary: Adds a like to the photo
       description: |-
@@ -578,7 +603,7 @@ paths:
         If the photo doesn't exist, an error response will be returned.
       operationId: likePhoto
       responses:
-        "201":
+        "200":
           {$ref: "#/components/responses/ObjectCreatedSuccessfully"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
@@ -598,7 +623,7 @@ paths:
         If the photo doesn't exist, an error response will be returned.
       operationId: unlikePhoto
       responses:
-        "202":
+        "200":
           {$ref: "#/components/responses/ObjectDeletedSuccessfully"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
@@ -609,10 +634,10 @@ paths:
       security:
         - bearerAuth: []
 
-  /profiles/{username}/photos/{photo_id}/comments/:
+  /profiles/{user_id}/photos/{photo_id}/comments/:
     parameters:
       - {$ref: "#/components/parameters/photo_id"}
-      - {$ref: "#/components/parameters/username" }
+      - {$ref: "#/components/parameters/user_id" }
     get:
       tags: ["photo interaction"]
       summary:  Retrieves the photo's comments
@@ -642,18 +667,9 @@ paths:
         content:
           application/json:
             schema:
-              description: Cbject with the content of the comment
-              type: object
-              properties:
-                text:
-                  description: Content of the comment
-                  type: string
-                  pattern: '.*'
-                  minLength: 1
-                  maxLength: 500
-                  example: Good photo
+                {$ref: "#/components/schemas/Comment"}
       responses:
-        "201":
+        "200":
           {$ref: "#/components/responses/ObjectCreatedSuccessfully"}
         "400":
           {$ref: "#/components/responses/BadRequest"}
@@ -664,11 +680,11 @@ paths:
       security:
         - bearerAuth: []
 
-  /profiles/{username}/photos/{photo_id}/comments/{comment_id}:
+  /profiles/{user_id}/photos/{photo_id}/comments/{comment_id}:
     parameters:
       - { $ref: "#/components/parameters/photo_id" }
       - { $ref: "#/components/parameters/comment_id"}
-      - { $ref: "#/components/parameters/username" }
+      - { $ref: "#/components/parameters/user_id" }
     delete:
       tags: ["photo interaction"]
       summary: Deletes a comment
@@ -678,7 +694,7 @@ paths:
         If who makes the request is not authenticated, an error response will be returned.
       operationId: uncommentPhoto
       responses:
-        "202":
+        "200":
           {$ref: "#/components/responses/ObjectDeletedSuccessfully"}
         "401":
           { $ref: "#/components/responses/UnauthorizedError" }
