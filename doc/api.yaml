@@ -564,7 +564,7 @@ paths:
       security:
         - bearerAuth: []
 
-  /profiles/{username}/photos/{photo_id}/likes:
+  /profiles/{username}/photos/{photo_id}/like:
     parameters:
       - {$ref: "#/components/parameters/photo_id"}
       - {$ref: "#/components/parameters/username"}
