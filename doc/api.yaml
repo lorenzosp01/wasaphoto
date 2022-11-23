@@ -377,7 +377,7 @@ paths:
       security:
         - bearerAuth: [ ]
 
-  /profiles/{auth_user_id}/photos/:
+  /profiles/{auth_user_id}/photos:
     post:
       parameters:
         - { $ref: "#/components/parameters/auth_user_id" }
@@ -634,7 +634,7 @@ paths:
       security:
         - bearerAuth: []
 
-  /profiles/{user_id}/photos/{photo_id}/comments/:
+  /profiles/{user_id}/photos/{photo_id}/comments:
     parameters:
       - {$ref: "#/components/parameters/photo_id"}
       - {$ref: "#/components/parameters/user_id" }
