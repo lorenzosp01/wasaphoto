@@ -183,6 +183,7 @@ components:
       type: string
       format: binary
       description: Image attached to photo
+      example: "10100110101010"
       minLength: 1
       maxLength: 1000000
     Photo:
@@ -192,8 +193,6 @@ components:
           description: photo identifier
           type: integer
           example: 1
-        image:
-          { $ref: "#/components/schemas/Image" }
         uploaded_at:
          { $ref: "#/components/schemas/Uploaded_at"}
         like_amount:
@@ -211,8 +210,6 @@ components:
           type: integer
           description: photo ID
           example: 1
-        image:
-          { $ref: "#/components/schemas/Image" }
         uploaded_at:
          { $ref: "#/components/schemas/Uploaded_at"}
         like_amount:
@@ -348,10 +345,10 @@ paths:
       security:
         - bearerAuth: [ ]
 
-  /profiles/{auth_user_id}/name:
+  /profiles/{user_id}/name:
     put:
       parameters:
-        - { $ref: "#/components/parameters/auth_user_id" }
+        - { $ref: "#/components/parameters/user_id" }
       tags: [ "manage profile" ]
       summary: Sets a new username for the authenticated user
       description: |-
@@ -377,10 +374,10 @@ paths:
       security:
         - bearerAuth: [ ]
 
-  /profiles/{auth_user_id}/photos:
+  /profiles/{user_id}/photos:
     post:
       parameters:
-        - { $ref: "#/components/parameters/auth_user_id" }
+        - { $ref: "#/components/parameters/user_id" }
       tags: ["manage profile"]
       summary: Uploads a new photo to the authenticated user profile
       description: |-
@@ -406,11 +403,37 @@ paths:
       security:
         - bearerAuth: []
 
-  /profiles/{auth_user_id}/photos/{photo_id}:
+  /profiles/{user_id}/photos/{photo_id}:
+    get:
+      parameters:
+        - { $ref: "#/components/parameters/photo_id" }
+        - { $ref: "#/components/parameters/user_id" }
+      tags: [ "manage profile" ]
+      summary: Returns the photo
+      description: |-
+        Returns the photo with the given photo_id of the user with the given user_id.
+        If who makes the request is not authenticated, an error response will be returned.
+        If a photo is not found, an error response will be returned.
+      operationId: getPhoto
+      responses:
+        "200":
+          description: Photo
+          content:
+            application/json:
+              schema:
+                  $ref: "#/components/schemas/Image"
+        "401":
+          { $ref: "#/components/responses/UnauthorizedError" }
+        "403":
+          { $ref: "#/components/responses/ForbiddenError" }
+        "404":
+          { $ref: "#/components/responses/ObjectNotFoundError" }
+      security:
+        - bearerAuth: [ ]
     delete:
       parameters:
         - {$ref: "#/components/parameters/photo_id"}
-        - {$ref: "#/components/parameters/auth_user_id"}
+        - {$ref: "#/components/parameters/user_id"}
       tags: ["manage profile"]
       summary: Deletes the photo of the authenticated user
       description: |-
@@ -436,7 +459,7 @@ paths:
       - {$ref: "#/components/parameters/user_id" }
       - {$ref: "#/components/parameters/auth_user_id"}
     put:
-      tags: ["manage profile"]
+      tags: ["users relations"]
       summary:  Follows a user
       description: |-
         Follow the user with the user id given in the path if the user is authenticated.
@@ -456,7 +479,7 @@ paths:
       security:
         - bearerAuth: []
     delete:
-      tags: ["manage profile"]
+      tags: ["users relations"]
       summary:  Unfollows a user
       description: |-
         Unfollow the user with the user_id specified in the path if the user is authenticated.
@@ -480,7 +503,7 @@ paths:
     parameters:
       - {$ref: "#/components/parameters/auth_user_id"}
     get:
-      tags: [ "manage profile" ]
+      tags: [ "users relations" ]
       summary: Gets followed users
       description: |-
         Get the list of users followed by the authenticated user.
@@ -504,7 +527,7 @@ paths:
       - {$ref: "#/components/parameters/user_id" }
       - {$ref: "#/components/parameters/auth_user_id"}
     put:
-      tags: ["manage profile"]
+      tags: ["users relations"]
       summary:  Bans a user
       description: |-
         Ban the user with the user_id given in the path if the user is authenticated.
@@ -524,7 +547,7 @@ paths:
       security:
         - bearerAuth: []
     delete:
-      tags: ["manage profile"]
+      tags: ["users relations"]
       summary:  Unbans a user
       description: |-
         Unban the user with the user_id specified in the path if the user is authenticated.
@@ -548,7 +571,7 @@ paths:
     parameters:
       - {$ref: "#/components/parameters/auth_user_id"}
     get:
-      tags: ["manage profile"]
+      tags: ["users relations"]
       summary:  Gets banned users
       description: |-
         Get the list of users banned by the authenticated user.
