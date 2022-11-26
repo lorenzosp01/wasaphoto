@@ -1,14 +1,16 @@
 package api
 
 import (
+	"errors"
 	"github.com/julienschmidt/httprouter"
 	"io"
 	"net/http"
 	"strconv"
+	"wasaphoto/service/utils"
 )
 
 func (rt *_router) uploadPhoto(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	owner_id, err := strconv.Atoi(ps.ByName("user_id"))
+	ownerId, err := strconv.Atoi(ps.ByName("user_id"))
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -17,20 +19,31 @@ func (rt *_router) uploadPhoto(w http.ResponseWriter, r *http.Request, ps httpro
 		return
 	}
 
+	authorizationHeader := r.Header.Get("Authorization")
+
+	httpErr := utils.Authorize(authorizationHeader, ps.ByName("user_id"))
+
+	if httpErr != (utils.HttpError{}) {
+		w.WriteHeader(httpErr.StatusCode)
+		_, _ = w.Write([]byte(httpErr.Message))
+		rt.baseLogger.WithError(errors.New(httpErr.Message)).Error("error authorizing user")
+		return
+	}
+
 	var photo []byte
 	photo, err = io.ReadAll(r.Body)
-	if err != nil {
+	if err != nil || len(photo) == 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = w.Write([]byte("Invalid photo"))
 		rt.baseLogger.WithError(err).Error("error reading photo")
 		return
 	}
 
-	err = rt.db.InsertPhoto(photo, int64(owner_id))
+	err = rt.db.InsertPhoto(photo, int64(ownerId))
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error inserting photo"))
+		_, _ = w.Write([]byte("Error inserting photo"))
 		rt.baseLogger.WithError(err).Error("error inserting photo in the database")
 		return
 	}

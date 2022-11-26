@@ -10,6 +10,11 @@ type Username struct {
 	Username string `json:"username"`
 }
 
+type HttpError struct {
+	StatusCode int
+	Message    string
+}
+
 func (u Username) IsValid() bool {
 	var valid = false
 	if len(u.Username) > 0 && len(u.Username) < 16 {
