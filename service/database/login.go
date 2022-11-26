@@ -23,7 +23,7 @@ func (db *appdbimpl) GetUserId(username string) (int64, error) {
 	return id, nil
 }
 
-// CreateUser creates a new user with the given username and returns the user id.
+// createUser creates a new user with the given username and returns the user id.
 func (db *appdbimpl) createUser(username string) (int64, error) {
 	var id int64
 	// Insert the new user into the database

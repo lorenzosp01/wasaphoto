@@ -40,6 +40,8 @@ import (
 type AppDatabase interface {
 	Ping() error
 	GetUserId(string) (int64, error)
+	GetImage(int64) ([]byte, error)
+	InsertPhoto([]byte, int64) error
 }
 
 type appdbimpl struct {

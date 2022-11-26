@@ -203,23 +203,6 @@ components:
           type: integer
           description: number of photo comments
           example: 2
-    PhotoWithOwner:
-      type: object
-      properties:
-        id:
-          type: integer
-          description: photo ID
-          example: 1
-        uploaded_at:
-         { $ref: "#/components/schemas/Uploaded_at"}
-        like_amount:
-          type: integer
-          example: 10
-          description: number of photo likes
-        comments_amount:
-          type: integer
-          example: 2
-          description: number of photo comments
         owner:
           { $ref: "#/components/schemas/User" }
     Comment:
@@ -259,7 +242,7 @@ components:
           type: array
           minItems: 0
           maxItems: 10
-          items: { $ref: "#/components/schemas/PhotoWithOwner" }
+          items: { $ref: "#/components/schemas/Photo" }
     BannedUsers:
       description: Object with the banned users list
       type: object
@@ -317,6 +300,9 @@ paths:
             application/json:
               schema:
                 {$ref: "#/components/schemas/UserIdentifier" }
+        '400':
+          {$ref: "#/components/responses/BadRequest" }
+
 
   /profiles/{user_id}:
     get:
@@ -414,7 +400,7 @@ paths:
         Returns the photo with the given photo_id of the user with the given user_id.
         If who makes the request is not authenticated, an error response will be returned.
         If a photo is not found, an error response will be returned.
-      operationId: getPhoto
+      operationId: getImage
       responses:
         "200":
           description: Photo
