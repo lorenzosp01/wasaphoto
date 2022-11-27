@@ -46,6 +46,7 @@ type AppDatabase interface {
 	InsertPhoto([]byte, int64) DbError
 	UserExists(int64) DbError
 	ChangeUsername(int64, string) DbError
+	DeletePhoto(int64) DbError
 }
 
 type DbError struct {

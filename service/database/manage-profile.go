@@ -37,3 +37,11 @@ func (db *appdbimpl) ChangeUsername(id int64, newUsername string) DbError {
 		Err: err,
 	}
 }
+
+func (db *appdbimpl) DeletePhoto(id int64) DbError {
+	query := fmt.Sprintf("DELETE FROM %s WHERE ID=?", PhotoTable)
+	_, err := db.c.Exec(query, id)
+	return DbError{
+		Err: err,
+	}
+}
