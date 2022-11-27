@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
+	"wasaphoto/service/database"
 	"wasaphoto/service/utils"
 )
 
@@ -15,7 +16,7 @@ func (rt *_router) doLogin(w http.ResponseWriter, r *http.Request, ps httprouter
 	if err != nil {
 		// Request body is not a valid JSON
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Invalid JSON"))
+		_, _ = w.Write([]byte("Invalid JSON"))
 		rt.baseLogger.Errorf("error decoding username: %v", err)
 		return
 	} else {
@@ -28,11 +29,14 @@ func (rt *_router) doLogin(w http.ResponseWriter, r *http.Request, ps httprouter
 	}
 
 	var id utils.UserIdentifier
-	id.Id, err = rt.db.GetUserId(username.Username)
-	if err != nil {
-		// if an error occurred while getting the user id
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error getting user id"))
+	var dbErr database.DbError
+
+	id.Id, dbErr = rt.db.GetUserId(username.Username)
+	// if an error occurred while getting the user id
+	if dbErr.Err != nil {
+		httpErr := dbErr.ToHttp()
+		w.WriteHeader(httpErr.StatusCode)
+		_, _ = w.Write([]byte(httpErr.Message))
 		rt.baseLogger.WithError(err).Error("error getting user id")
 		return
 	}

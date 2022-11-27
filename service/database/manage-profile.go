@@ -1,30 +1,32 @@
 package database
 
-import (
-	"database/sql"
-	"errors"
-)
+import "fmt"
 
-func (db *appdbimpl) InsertPhoto(image []byte, owner_id int64) error {
-
+func (db *appdbimpl) InsertPhoto(image []byte, ownerId int64) DbError {
 	// Upload the photo to the database
-	_, err := db.c.Exec("INSERT INTO Photo (owner, image) VALUES (?, ?)", owner_id, image)
+	query := fmt.Sprintf("INSERT INTO %s (owner, image) VALUES (?, ?)", PhotoTable)
+	_, err := db.c.Exec(query, ownerId, image)
 	// If the insert was unsuccessful, return an error
 	if err != nil {
-		return err
+		return DbError{
+			Err: err,
+		}
 	}
 
-	return nil
+	return DbError{}
 }
 
-func (db *appdbimpl) GetImage(photoId int64) ([]byte, error) {
+func (db *appdbimpl) GetImage(photoId int64) ([]byte, DbError) {
 
 	var image []byte
-	err := db.c.QueryRow("SELECT image FROM Photo WHERE id=?", photoId).Scan(&image)
+	query := fmt.Sprintf("SELECT image %s FROM Photo WHERE id=?", PhotoTable)
+	err := db.c.QueryRow(query, photoId).Scan(&image)
 
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, err
+	if err != nil {
+		return nil, DbError{
+			Err: err,
+		}
 	}
 
-	return image, nil
+	return image, DbError{}
 }

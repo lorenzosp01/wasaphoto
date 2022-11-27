@@ -34,15 +34,42 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"net/http"
+	"wasaphoto/service/utils"
 )
 
 // AppDatabase is the high level interface for the DB
 type AppDatabase interface {
 	Ping() error
-	GetUserId(string) (int64, error)
-	GetImage(int64) ([]byte, error)
-	InsertPhoto([]byte, int64) error
+	GetUserId(string) (int64, DbError)
+	GetImage(int64) ([]byte, DbError)
+	InsertPhoto([]byte, int64) DbError
+	UserExists(int64) DbError
 }
+
+type DbError struct {
+	Err error
+}
+
+func (e DbError) ToHttp() utils.HttpError {
+	switch e.Err {
+	case sql.ErrNoRows:
+		return utils.HttpError{
+			StatusCode: http.StatusNotFound,
+			Message:    "Not found",
+		}
+	default:
+		return utils.HttpError{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Internal server error",
+		}
+	}
+}
+
+const (
+	UserTable  = "User"
+	PhotoTable = "Photo"
+)
 
 type appdbimpl struct {
 	c *sql.DB
@@ -73,4 +100,13 @@ func New(db *sql.DB) (AppDatabase, error) {
 
 func (db *appdbimpl) Ping() error {
 	return db.c.Ping()
+}
+
+// UserExists returns an error if the user does not exist or if there is an error.
+// during query execution.
+func (db *appdbimpl) UserExists(id int64) DbError {
+	var dbErr DbError
+	query := fmt.Sprintf("SELECT id FROM %s WHERE id=?", UserTable)
+	dbErr.Err = db.c.QueryRow(query, id).Scan(&id)
+	return dbErr
 }

@@ -1,6 +1,8 @@
 package utils
 
-import "regexp"
+import (
+	"regexp"
+)
 
 type UserIdentifier struct {
 	Id int64 `json:"identifier"`

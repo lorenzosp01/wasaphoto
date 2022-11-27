@@ -10,7 +10,7 @@ import (
 )
 
 func (rt *_router) uploadPhoto(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	ownerId, err := strconv.Atoi(ps.ByName("user_id"))
+	userId, err := strconv.Atoi(ps.ByName("user_id"))
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -19,8 +19,15 @@ func (rt *_router) uploadPhoto(w http.ResponseWriter, r *http.Request, ps httpro
 		return
 	}
 
-	authorizationHeader := r.Header.Get("Authorization")
+	dbErr := rt.db.UserExists(int64(userId))
+	if dbErr.Err != nil {
+		httpError := dbErr.ToHttp()
+		w.WriteHeader(httpError.StatusCode)
+		_, _ = w.Write([]byte(httpError.Message))
+		return
+	}
 
+	authorizationHeader := r.Header.Get("Authorization")
 	httpErr := utils.Authorize(authorizationHeader, ps.ByName("user_id"))
 
 	if httpErr != (utils.HttpError{}) {
@@ -39,12 +46,12 @@ func (rt *_router) uploadPhoto(w http.ResponseWriter, r *http.Request, ps httpro
 		return
 	}
 
-	err = rt.db.InsertPhoto(photo, int64(ownerId))
-
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte("Error inserting photo"))
-		rt.baseLogger.WithError(err).Error("error inserting photo in the database")
+	dbErr = rt.db.InsertPhoto(photo, int64(userId))
+	if dbErr.Err != nil {
+		httpError := dbErr.ToHttp()
+		w.WriteHeader(httpError.StatusCode)
+		_, _ = w.Write([]byte(httpError.Message))
+		rt.baseLogger.WithError(dbErr.Err).Error("error inserting photo in the database")
 		return
 	}
 
@@ -53,8 +60,16 @@ func (rt *_router) uploadPhoto(w http.ResponseWriter, r *http.Request, ps httpro
 }
 
 func (rt *_router) getImage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	photo_id, err := strconv.Atoi(ps.ByName("photo_id"))
 
+	userId, err := strconv.Atoi(ps.ByName("user_id"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Invalid user id"))
+		rt.baseLogger.WithError(err).Error("error parsing user id")
+		return
+	}
+
+	photoId, err := strconv.Atoi(ps.ByName("photo_id"))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = w.Write([]byte("Invalid photo id"))
@@ -62,12 +77,22 @@ func (rt *_router) getImage(w http.ResponseWriter, r *http.Request, ps httproute
 		return
 	}
 
-	image, err := rt.db.GetImage(int64(photo_id))
+	dbErr := rt.db.UserExists(int64(userId))
+	if dbErr.Err != nil {
+		httpError := dbErr.ToHttp()
+		w.WriteHeader(httpError.StatusCode)
+		_, _ = w.Write([]byte(httpError.Message))
+		rt.baseLogger.WithError(dbErr.Err).Error("error during get user")
+		return
+	}
 
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error getting image"))
-		rt.baseLogger.WithError(err).Error("error getting image from the database")
+	var image []byte
+	image, dbErr = rt.db.GetImage(int64(photoId))
+	if dbErr.Err != nil {
+		httpError := dbErr.ToHttp()
+		w.WriteHeader(httpError.StatusCode)
+		_, _ = w.Write([]byte(httpError.Message))
+		rt.baseLogger.WithError(dbErr.Err).Error("error during get image")
 		return
 	}
 
