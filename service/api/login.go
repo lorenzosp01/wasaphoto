@@ -19,13 +19,13 @@ func (rt *_router) doLogin(w http.ResponseWriter, r *http.Request, ps httprouter
 		_, _ = w.Write([]byte("Invalid JSON"))
 		rt.baseLogger.Errorf("error decoding username: %v", err)
 		return
-	} else {
-		if !username.IsValid() {
-			// Username is not valid
-			w.WriteHeader(http.StatusBadRequest)
-			_, _ = w.Write([]byte("Invalid username"))
-			return
-		}
+	}
+
+	if !username.IsValid() {
+		// Username is not valid
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Invalid username"))
+		return
 	}
 
 	var id utils.UserIdentifier
@@ -42,6 +42,7 @@ func (rt *_router) doLogin(w http.ResponseWriter, r *http.Request, ps httprouter
 	}
 
 	w.Header().Set("content-type", "application/json")
+	w.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(w).Encode(id)
 
 }

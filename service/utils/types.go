@@ -12,6 +12,11 @@ type Username struct {
 	Username string `json:"username"`
 }
 
+type User struct {
+	Id       int64  `json:"identifier"`
+	Username string `json:"username"`
+}
+
 type HttpError struct {
 	StatusCode int
 	Message    string

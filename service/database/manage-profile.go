@@ -17,7 +17,6 @@ func (db *appdbimpl) InsertPhoto(image []byte, ownerId int64) DbError {
 }
 
 func (db *appdbimpl) GetImage(photoId int64) ([]byte, DbError) {
-
 	var image []byte
 	query := fmt.Sprintf("SELECT image %s FROM Photo WHERE id=?", PhotoTable)
 	err := db.c.QueryRow(query, photoId).Scan(&image)
@@ -29,4 +28,12 @@ func (db *appdbimpl) GetImage(photoId int64) ([]byte, DbError) {
 	}
 
 	return image, DbError{}
+}
+
+func (db *appdbimpl) ChangeUsername(id int64, newUsername string) DbError {
+	query := fmt.Sprintf("UPDATE %s SET name=? WHERE ID=?", UserTable)
+	_, err := db.c.Exec(query, newUsername, id)
+	return DbError{
+		Err: err,
+	}
 }
