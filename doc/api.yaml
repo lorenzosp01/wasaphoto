@@ -161,7 +161,7 @@ components:
           minItems: 0
           maxItems: 10
         profile_info:
-          {$ref: "#/components/schemas/ProfileInfo"}
+          {$ref: "#/components/schemas/Profile_info"}
     Uploaded_at:
       type: string
       format: date-time
@@ -200,7 +200,7 @@ components:
             type: integer
             description: number of photo comments
             example: 2
-    ProfileInfo:
+    Profile_info:
         type: object
         properties:
           photos_counter:
@@ -211,7 +211,7 @@ components:
             type: integer
             description: number of user followers
             example: 2
-          followingCounter:
+          following_counter:
             type: integer
             description: number of user following
             example: 2
