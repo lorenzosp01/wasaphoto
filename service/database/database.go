@@ -47,6 +47,40 @@ type AppDatabase interface {
 	UserExists(int64) DbError
 	ChangeUsername(int64, string) DbError
 	DeletePhoto(int64) DbError
+	IsPhotoOwner(int64, int64) (bool, DbError)
+	IsUserBannedBy(int64, int64) (bool, DbError)
+	GetUserProfile(int64) (UserProfile, DbError)
+	getUserPhotos(int64) ([]Photo, DbError)
+	getProfileCounters(int64) (ProfileCounters, DbError)
+}
+
+type UserProfile struct {
+	UserInfo    User
+	Photos      []Photo
+	ProfileInfo ProfileCounters
+}
+
+type ProfileCounters struct {
+	PhotosCounter    int
+	FollowingCounter int
+	FollowersCounter int
+}
+
+type Photo struct {
+	Id         int64
+	Owner      int64
+	UploadedAt string
+	PhotoInfo  PhotoCounters
+}
+
+type PhotoCounters struct {
+	LikesCounter    int
+	CommentsCounter int
+}
+
+type User struct {
+	Id       int64
+	Username string
 }
 
 type DbError struct {
@@ -69,8 +103,12 @@ func (e DbError) ToHttp() utils.HttpError {
 }
 
 const (
-	UserTable  = "User"
-	PhotoTable = "Photo"
+	UserTable    string = "User"
+	PhotoTable   string = "Photo"
+	BanTable     string = "Ban"
+	LikeTable    string = "Like"
+	FollowTable  string = "Follow"
+	CommentTable string = "Comment"
 )
 
 type appdbimpl struct {
@@ -107,8 +145,23 @@ func (db *appdbimpl) Ping() error {
 // UserExists returns an error if the user does not exist or if there is an error.
 // during query execution.
 func (db *appdbimpl) UserExists(id int64) DbError {
-	var dbErr DbError
 	query := fmt.Sprintf("SELECT id FROM %s WHERE id=?", UserTable)
-	dbErr.Err = db.c.QueryRow(query, id).Scan(&id)
-	return dbErr
+	return DbError{db.c.QueryRow(query, id).Scan(&id)}
+}
+
+func (db *appdbimpl) IsPhotoOwner(id int64, owner_id int64) (bool, DbError) {
+	var realOwner int64
+	var dbErr DbError
+	query := fmt.Sprintf("SELECT owner FROM %s WHERE id=?", PhotoTable)
+	dbErr.Err = db.c.QueryRow(query, id, owner_id).Scan(&realOwner)
+
+	return realOwner == owner_id, dbErr
+}
+
+func (db *appdbimpl) IsUserBannedBy(banned_id int64, banning_id int64) (bool, DbError) {
+	var dbErr DbError
+	query := fmt.Sprintf("SELECT banned FROM %s WHERE banned=? AND banning=?", BanTable)
+	dbErr.Err = db.c.QueryRow(query, banned_id, banning_id).Scan(&banned_id)
+
+	return !errors.Is(dbErr.Err, sql.ErrNoRows), dbErr
 }

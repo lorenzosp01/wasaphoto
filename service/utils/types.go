@@ -2,6 +2,7 @@ package utils
 
 import (
 	"regexp"
+	"strconv"
 )
 
 type UserIdentifier struct {
@@ -12,20 +13,27 @@ type Username struct {
 	Username string `json:"username"`
 }
 
-type User struct {
-	Id       int64  `json:"identifier"`
-	Username string `json:"username"`
-}
-
-type HttpError struct {
-	StatusCode int
-	Message    string
-}
-
 func (u Username) IsValid() bool {
 	var valid = false
 	if len(u.Username) > 0 && len(u.Username) < 16 {
 		valid, _ = regexp.Match(`^[a-zA-Z0-9]+$`, []byte(u.Username))
 	}
 	return valid
+}
+
+type Token struct {
+	Value string
+}
+
+func (t Token) IsValid() bool {
+	if len(t.Value) > 0 {
+		_, err := strconv.ParseInt(t.Value, 10, 64)
+		return err == nil
+	}
+	return false
+}
+
+type HttpError struct {
+	StatusCode int
+	Message    string
 }

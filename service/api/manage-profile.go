@@ -31,7 +31,7 @@ func (rt *_router) uploadPhoto(w http.ResponseWriter, r *http.Request, ps httpro
 	authorizationHeader := r.Header.Get("Authorization")
 	httpErr := utils.Authorize(authorizationHeader, ps.ByName("user_id"))
 
-	if httpErr != (utils.HttpError{}) {
+	if httpErr.Message != "" {
 		w.WriteHeader(httpErr.StatusCode)
 		_, _ = w.Write([]byte(httpErr.Message))
 		rt.baseLogger.WithError(errors.New(httpErr.Message)).Error("error authorizing user")
@@ -123,7 +123,7 @@ func (rt *_router) setMyUsername(w http.ResponseWriter, r *http.Request, ps http
 	authorizationHeader := r.Header.Get("Authorization")
 	httpErr := utils.Authorize(authorizationHeader, ps.ByName("user_id"))
 
-	if httpErr != (utils.HttpError{}) {
+	if httpErr.Message != "" {
 		w.WriteHeader(httpErr.StatusCode)
 		_, _ = w.Write([]byte(httpErr.Message))
 		rt.baseLogger.WithError(errors.New(httpErr.Message)).Error("error authorizing user")
@@ -155,7 +155,7 @@ func (rt *_router) setMyUsername(w http.ResponseWriter, r *http.Request, ps http
 		return
 	}
 
-	user := utils.User{
+	user := User{
 		Id:       userId,
 		Username: newUsername.Username,
 	}
@@ -193,20 +193,27 @@ func (rt *_router) deletePhoto(w http.ResponseWriter, r *http.Request, ps httpro
 	authorizationHeader := r.Header.Get("Authorization")
 	httpErr := utils.Authorize(authorizationHeader, ps.ByName("user_id"))
 
-	if httpErr != (utils.HttpError{}) {
+	if httpErr.Message != "" {
 		w.WriteHeader(httpErr.StatusCode)
 		_, _ = w.Write([]byte(httpErr.Message))
 		rt.baseLogger.WithError(errors.New(httpErr.Message)).Error("error authorizing user")
 		return
 	}
 
-	// capire se serve
-	_, dbErr = rt.db.GetImage(photoId)
-	if dbErr.Err != nil {
-		httpError := dbErr.ToHttp()
-		w.WriteHeader(httpError.StatusCode)
-		_, _ = w.Write([]byte(httpError.Message))
-		rt.baseLogger.WithError(dbErr.Err).Error("error during get image")
+	var isPhotoOwner bool
+	// Check if photo exists and if it belongs to the user
+	isPhotoOwner, dbErr = rt.db.IsPhotoOwner(photoId, userId)
+	if !isPhotoOwner {
+		httpErr = dbErr.ToHttp()
+		if httpErr.StatusCode != http.StatusInternalServerError {
+			w.WriteHeader(http.StatusForbidden)
+			_, _ = w.Write([]byte("You cannot delete the photo"))
+			rt.baseLogger.WithError(dbErr.Err).Error("The user cannot access to that photo")
+		} else {
+			w.WriteHeader(httpErr.StatusCode)
+			_, _ = w.Write([]byte(httpErr.Message))
+			rt.baseLogger.WithError(dbErr.Err).Error("Server error")
+		}
 		return
 	}
 
@@ -221,4 +228,65 @@ func (rt *_router) deletePhoto(w http.ResponseWriter, r *http.Request, ps httpro
 
 	w.Header().Set("Content-Type", "text/plain")
 	_, _ = w.Write([]byte("Photo deleted successfully"))
+}
+
+func (rt *_router) getUserProfile(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	userId, err := strconv.ParseInt(ps.ByName("user_id"), 10, 64)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Invalid user id"))
+		rt.baseLogger.WithError(err).Error("error parsing user id")
+		return
+	}
+
+	//todo capire se è necessario
+	dbErr := rt.db.UserExists(userId)
+	if dbErr.Err != nil {
+		httpError := dbErr.ToHttp()
+		w.WriteHeader(httpError.StatusCode)
+		_, _ = w.Write([]byte(httpError.Message))
+		rt.baseLogger.WithError(dbErr.Err).Error("error during get user")
+		return
+	}
+
+	token := utils.GetAuthenticationToken(r.Header.Get("Authorization"))
+	if !token.IsValid() {
+		w.WriteHeader(http.StatusUnauthorized)
+		_, _ = w.Write([]byte("You are not authorized to access this resource"))
+		rt.baseLogger.WithError(errors.New("error authorizing user")).Error("error authorizing user")
+		return
+	}
+	authUserId, _ := strconv.ParseInt(token.Value, 10, 64)
+
+	var userIsBanned bool
+	userIsBanned, dbErr = rt.db.IsUserBannedBy(authUserId, userId)
+	if userIsBanned {
+		if dbErr.Err != nil {
+			httpErr := dbErr.ToHttp()
+			w.WriteHeader(httpErr.StatusCode)
+			rt.baseLogger.WithError(dbErr.Err).Error(httpErr.Message)
+			return
+		}
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = w.Write([]byte("Banned by that user"))
+		rt.baseLogger.Errorf("The user is banned")
+		return
+	}
+
+	var userProfile UserProfile
+	up, dbErr := rt.db.GetUserProfile(userId)
+	userProfile.fromDatabase(up)
+
+	if dbErr.Err != nil {
+		httpError := dbErr.ToHttp()
+		w.WriteHeader(httpError.StatusCode)
+		_, _ = w.Write([]byte(httpError.Message))
+		rt.baseLogger.WithError(dbErr.Err).Error("error during get user profile")
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(userProfile)
+
 }

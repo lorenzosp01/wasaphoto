@@ -4,6 +4,7 @@ import (
 	"net/http"
 )
 
+// todo add wrapper
 // Handler returns an instance of httprouter.Router that handle APIs registered here
 func (rt *_router) Handler() http.Handler {
 	// Register routes
@@ -12,6 +13,7 @@ func (rt *_router) Handler() http.Handler {
 	rt.router.GET("/profiles/:user_id/photos/:photo_id", rt.getImage)
 	rt.router.PUT("/profiles/:user_id/name", rt.setMyUsername)
 	rt.router.DELETE("/profiles/:user_id/photos/:photo_id", rt.deletePhoto)
+	rt.router.GET("/profiles/:user_id", rt.getUserProfile)
 	// Special routes
 	rt.router.GET("/liveness", rt.liveness)
 

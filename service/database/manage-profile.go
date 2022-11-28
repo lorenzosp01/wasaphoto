@@ -1,6 +1,9 @@
 package database
 
-import "fmt"
+import (
+	"database/sql"
+	"fmt"
+)
 
 func (db *appdbimpl) InsertPhoto(image []byte, ownerId int64) DbError {
 	// Upload the photo to the database
@@ -44,4 +47,95 @@ func (db *appdbimpl) DeletePhoto(id int64) DbError {
 	return DbError{
 		Err: err,
 	}
+}
+
+func (db *appdbimpl) GetUserProfile(id int64) (UserProfile, DbError) {
+	var up UserProfile
+	var dbErr DbError
+
+	up.UserInfo.Id = id
+	query := fmt.Sprintf("SELECT name FROM %s WHERE id=?", UserTable)
+	dbErr.Err = db.c.QueryRow(query, id).Scan(&up.UserInfo.Username)
+
+	if dbErr.Err != nil {
+		return up, dbErr
+	}
+
+	up.Photos, dbErr = db.getUserPhotos(id)
+	if dbErr.Err != nil {
+		return up, dbErr
+	}
+
+	up.ProfileInfo, dbErr = db.getProfileCounters(id)
+
+	return up, dbErr
+}
+
+func (db *appdbimpl) getUserPhotos(id int64) ([]Photo, DbError) {
+	// Per ogni foto
+	var dbErr DbError
+	var rows *sql.Rows
+	query := fmt.Sprintf("SELECT id, uploaded_at FROM %s WHERE owner=?", PhotoTable)
+	rows, dbErr.Err = db.c.Query(query, id)
+
+	if dbErr.Err != nil {
+		return nil, dbErr
+	}
+
+	var photos []Photo
+	var photo Photo
+
+	for rows.Next() {
+		photo.Owner = id
+		dbErr.Err = rows.Scan(&photo.Id, &photo.UploadedAt)
+		if dbErr.Err != nil {
+			return nil, dbErr
+		}
+
+		photo.PhotoInfo, dbErr = db.getPhotoCounters(photo.Id)
+		if dbErr.Err != nil {
+			return nil, dbErr
+		}
+
+		photos = append(photos, photo)
+	}
+
+	return photos, dbErr
+}
+
+func (db *appdbimpl) getPhotoCounters(photoId int64) (PhotoCounters, DbError) {
+	var photoCounters PhotoCounters
+	var dbErr DbError
+
+	query := fmt.Sprintf("SELECT count(*) FROM %s WHERE photo=?", LikeTable)
+	dbErr.Err = db.c.QueryRow(query, photoId).Scan(&photoCounters.LikesCounter)
+	if dbErr.Err != nil {
+		return photoCounters, dbErr
+	}
+
+	query = fmt.Sprintf("SELECT count(*) FROM %s WHERE photo=?", CommentTable)
+	dbErr.Err = db.c.QueryRow(query, photoId).Scan(&photoCounters.CommentsCounter)
+
+	return photoCounters, dbErr
+}
+
+func (db *appdbimpl) getProfileCounters(id int64) (ProfileCounters, DbError) {
+	var dbErr DbError
+	var profileCounters ProfileCounters
+
+	query := fmt.Sprintf("SELECT count(*) FROM %s WHERE follower=?", FollowTable)
+	dbErr.Err = db.c.QueryRow(query, id).Scan(&profileCounters.FollowingCounter)
+	if dbErr.Err != nil {
+		return profileCounters, dbErr
+	}
+
+	query = fmt.Sprintf("SELECT count(*) FROM %s WHERE following=?", FollowTable)
+	dbErr.Err = db.c.QueryRow(query, id).Scan(&profileCounters.FollowersCounter)
+	if dbErr.Err != nil {
+		return profileCounters, dbErr
+	}
+
+	query = fmt.Sprintf("SELECT count(*) FROM %s WHERE owner=?", PhotoTable)
+	dbErr.Err = db.c.QueryRow(query, id).Scan(&profileCounters.PhotosCounter)
+	return profileCounters, dbErr
 }

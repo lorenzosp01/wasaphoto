@@ -160,18 +160,8 @@ components:
           items: {$ref: "#/components/schemas/Photo"}
           minItems: 0
           maxItems: 10
-        photos_amount:
-          description: Photos amount
-          type: integer
-          example: 1
-        followers_amount:
-          description: Number of followers
-          type: integer
-          example: 10
-        following_amount:
-          description: Number of following users
-          type: integer
-          example: 10
+        profile_info:
+          {$ref: "#/components/schemas/ProfileInfo"}
     Uploaded_at:
       type: string
       format: date-time
@@ -195,16 +185,36 @@ components:
           example: 1
         uploaded_at:
          { $ref: "#/components/schemas/Uploaded_at"}
-        like_amount:
-          type: integer
-          description: number of photo likes
-          example: 10
-        comments_amount:
-          type: integer
-          description: number of photo comments
-          example: 2
+        photoInfo:
+          {$ref: "#/components/schemas/PhotoInfo"}
         owner:
           { $ref: "#/components/schemas/User" }
+    PhotoInfo:
+        type: object
+        properties:
+          likes_counter:
+            type: integer
+            description: number of photo likes
+            example: 10
+          comments_counter:
+            type: integer
+            description: number of photo comments
+            example: 2
+    ProfileInfo:
+        type: object
+        properties:
+          photos_counter:
+            type: integer
+            description: number of user photos
+            example: 10
+          followers_counter:
+            type: integer
+            description: number of user followers
+            example: 2
+          followingCounter:
+            type: integer
+            description: number of user following
+            example: 2
     Comment:
       type: object
       description: Comment on a photo
