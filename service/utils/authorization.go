@@ -26,13 +26,10 @@ func Authorize(authorizationHeader string, urlId string) HttpError {
 			return error
 		} else {
 			error.StatusCode = 403
-			error.Message = "Forbidden"
 			return error
 		}
 	}
 
 	error.StatusCode = 401
-	error.Message = "Unauthorized"
-
 	return error
 }

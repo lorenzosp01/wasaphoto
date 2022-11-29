@@ -94,6 +94,8 @@ func (e DbError) ToHttp() utils.HttpError {
 			StatusCode: http.StatusNotFound,
 			Message:    "Not found",
 		}
+	case nil:
+		return utils.HttpError{}
 	default:
 		return utils.HttpError{
 			StatusCode: http.StatusInternalServerError,

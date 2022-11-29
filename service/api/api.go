@@ -42,6 +42,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"net/http"
 	"wasaphoto/service/database"
+	"wasaphoto/service/utils"
 )
 
 // Config is used to provide dependencies and configuration to the New function.
@@ -93,4 +94,25 @@ type _router struct {
 	baseLogger logrus.FieldLogger
 
 	db database.AppDatabase
+}
+
+func (rt *_router) LoggerAndHttpErrorSender(resWriter http.ResponseWriter, err error, errorResponse utils.HttpError) {
+	if errorResponse.StatusCode != 0 {
+		switch errorResponse.StatusCode {
+		case http.StatusNotFound:
+			errorResponse.Message = "Not found"
+		case http.StatusBadRequest:
+			errorResponse.Message = "Bad request"
+		case http.StatusUnauthorized:
+			errorResponse.Message = "Unauthorized"
+		case http.StatusInternalServerError:
+			errorResponse.Message = "Server error"
+		case http.StatusForbidden:
+			errorResponse.Message = "Forbidden"
+		}
+
+		resWriter.WriteHeader(errorResponse.StatusCode)
+		_, _ = resWriter.Write([]byte(errorResponse.Message))
+		rt.baseLogger.WithError(err).Error(errorResponse.Message)
+	}
 }
