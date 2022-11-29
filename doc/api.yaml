@@ -161,7 +161,7 @@ components:
           minItems: 0
           maxItems: 10
         profile_info:
-          {$ref: "#/components/schemas/Profile_info"}
+          {$ref: "#/components/schemas/ProfileInfo"}
     Uploaded_at:
       type: string
       format: date-time
@@ -217,7 +217,6 @@ components:
           type: integer
           description: number of user following
           example: 2
->>>>>>> feature/authorization
     Comment:
       type: object
       description: Comment on a photo
@@ -405,10 +404,10 @@ paths:
         - bearerAuth: []
 
   /profiles/{user_id}/photos/{photo_id}:
+    parameters:
+      - { $ref: "#/components/parameters/photo_id" }
+      - { $ref: "#/components/parameters/user_id" }
     get:
-      parameters:
-        - { $ref: "#/components/parameters/photo_id" }
-        - { $ref: "#/components/parameters/user_id" }
       tags: [ "manage profile" ]
       summary: Returns the photo
       description: |-
@@ -432,9 +431,6 @@ paths:
       security:
         - bearerAuth: [ ]
     delete:
-      parameters:
-        - {$ref: "#/components/parameters/photo_id"}
-        - {$ref: "#/components/parameters/user_id"}
       tags: ["manage profile"]
       summary: Deletes the photo of the authenticated user
       description: |-
