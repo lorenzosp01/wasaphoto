@@ -190,31 +190,33 @@ components:
         owner:
           { $ref: "#/components/schemas/User" }
     PhotoInfo:
-        type: object
-        properties:
-          likes_counter:
-            type: integer
-            description: number of photo likes
-            example: 10
-          comments_counter:
-            type: integer
-            description: number of photo comments
-            example: 2
+      description: Info about likes and comments
+      type: object
+      properties:
+        likes_counter:
+          type: integer
+          description: number of photo likes
+          example: 10
+        comments_counter:
+          type: integer
+          description: number of photo comments
+          example: 2
     ProfileInfo:
-        type: object
-        properties:
-          photos_counter:
-            type: integer
-            description: number of user photos
-            example: 10
-          followers_counter:
-            type: integer
-            description: number of user followers
-            example: 2
-          followingCounter:
-            type: integer
-            description: number of user following
-            example: 2
+      description: Info about followers, followind and photo
+      type: object
+      properties:
+        photos_counter:
+          type: integer
+          description: number of user photos
+          example: 10
+        followers_counter:
+          type: integer
+          description: number of user followers
+          example: 2
+        followingCounter:
+          type: integer
+          description: number of user following
+          example: 2
     Comment:
       type: object
       description: Comment on a photo
@@ -417,7 +419,7 @@ paths:
         "200":
           description: Photo
           content:
-            application/json:
+            image/png:
               schema:
                   $ref: "#/components/schemas/Image"
         "401":
