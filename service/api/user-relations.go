@@ -1,15 +1,25 @@
 package api
 
 import (
+	"errors"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"strconv"
+	"wasaphoto/service/database"
 	"wasaphoto/service/utils"
 )
 
-// todo capire se serve controllare l'esistenza dell'utente nel db
+// todo gestire esistenza dell'utente come error nel db
 func (rt *_router) banUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	rt.targetUser(w, r, ps, database.BanTable)
+}
 
+func (rt *_router) followUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	rt.targetUser(w, r, ps, database.FollowTable)
+}
+
+// todo per il follow stare attento a controllare che l'utente non possa seguire un utente lo ha bannato e vicersa
+func (rt *_router) targetUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params, tableToUse string) {
 	authUserId, err := strconv.ParseInt(ps.ByName("user_id"), 10, 64)
 	if err != nil {
 		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400})
@@ -33,22 +43,30 @@ func (rt *_router) banUser(w http.ResponseWriter, r *http.Request, ps httprouter
 		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 403})
 		return
 	}
-	//todo capire se quel if si può fare nella funzione
-	userIsBanned, dbErr := rt.db.IsUserBannedBy(targetedUserId, authUserId)
-	if userIsBanned {
+
+	//todo i doppi inserimenti di riga nel database vanno gestiti come dberror
+	isTargeted, dbErr := rt.db.IsUserAlreadyTargeted(authUserId, targetedUserId, tableToUse)
+	if isTargeted {
 		if dbErr.Err != nil {
-			rt.LoggerAndHttpErrorSender(w, err, dbErr.ToHttp())
+			rt.LoggerAndHttpErrorSender(w, dbErr.Err, dbErr.ToHttp())
 		} else {
-			rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 409})
+			rt.LoggerAndHttpErrorSender(w, errors.New("user already targeted"), utils.HttpError{StatusCode: 409})
 		}
 		return
 	}
 
-	dbErr = rt.db.BanUser(authUserId, targetedUserId)
+	dbErr = rt.db.TargetUser(authUserId, targetedUserId, tableToUse)
 	if dbErr.Err != nil {
-		rt.LoggerAndHttpErrorSender(w, err, dbErr.ToHttp())
+		rt.LoggerAndHttpErrorSender(w, dbErr.Err, dbErr.ToHttp())
+		return
 	}
 
 	w.Header().Set("Content-Type", "text/plain")
-	_, _ = w.Write([]byte("User banned successfully"))
+	switch tableToUse {
+	case database.BanTable:
+		_, _ = w.Write([]byte("User banned successfully"))
+	case database.FollowTable:
+		_, _ = w.Write([]byte("User followed successfully"))
+	}
+
 }

@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"wasaphoto/service/database"
 	"wasaphoto/service/utils"
 )
 
@@ -194,7 +195,7 @@ func (rt *_router) getUserProfile(w http.ResponseWriter, r *http.Request, ps htt
 
 	authUserId, _ := strconv.ParseInt(token.Value, 10, 64)
 	var userIsBanned bool
-	userIsBanned, dbErr = rt.db.IsUserBannedBy(authUserId, userId)
+	userIsBanned, dbErr = rt.db.IsUserAlreadyTargeted(authUserId, userId, database.BanTable)
 	if userIsBanned {
 		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 403})
 		return

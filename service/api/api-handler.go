@@ -16,7 +16,7 @@ func (rt *_router) Handler() http.Handler {
 	rt.router.GET("/profiles/:user_id", rt.getUserProfile)
 	rt.router.PUT("/profiles/:user_id/ban/:targeted_user_id", rt.banUser)
 	//rt.router.DELETE("/profiles/:auth_user_id/ban/:user_id", rt.unbanUser)
-	//rt.router.PUT("/profiles/:auth_user_id/following/:user_id", rt.followUser)
+	rt.router.PUT("/profiles/:user_id/following/:targeted_user_id", rt.followUser)
 	//rt.router.DELETE("/profiles/:auth_user_id/following/:user_id", rt.unfollowUser)
 	// Special routes
 	rt.router.GET("/liveness", rt.liveness)

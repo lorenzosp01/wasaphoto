@@ -48,11 +48,11 @@ type AppDatabase interface {
 	ChangeUsername(int64, string) DbError
 	DeletePhoto(int64) DbError
 	IsPhotoOwner(int64, int64) (bool, DbError)
-	IsUserBannedBy(int64, int64) (bool, DbError)
 	GetUserProfile(int64) (UserProfile, DbError)
 	getUserPhotos(int64) ([]Photo, DbError)
 	getProfileCounters(int64) (ProfileCounters, DbError)
-	BanUser(int64, int64) DbError
+	TargetUser(int64, int64, string) DbError
+	IsUserAlreadyTargeted(int64, int64, string) (bool, DbError)
 }
 
 type UserProfile struct {
@@ -161,10 +161,19 @@ func (db *appdbimpl) IsPhotoOwner(id int64, owner_id int64) (bool, DbError) {
 	return realOwner == owner_id, dbErr
 }
 
-func (db *appdbimpl) IsUserBannedBy(banned_id int64, banning_id int64) (bool, DbError) {
+func (db *appdbimpl) IsUserAlreadyTargeted(userId int64, targetedUserId int64, tableName string) (bool, DbError) {
 	var dbErr DbError
-	query := fmt.Sprintf("SELECT banned FROM %s WHERE banned=? AND banning=?", BanTable)
-	dbErr.Err = db.c.QueryRow(query, banned_id, banning_id).Scan(&banned_id)
+	var query string
+	switch tableName {
+	case BanTable:
+		query = fmt.Sprintf("SELECT banned FROM %s WHERE banned=? AND banning=?", BanTable)
+	case FollowTable:
+		query = fmt.Sprintf("SELECT follower FROM %s WHERE following=? AND follower=?", FollowTable)
+	default:
+		return false, DbError{errors.New("invalid table name")}
+	}
+
+	dbErr.Err = db.c.QueryRow(query, targetedUserId, userId).Scan(&userId)
 
 	return !errors.Is(dbErr.Err, sql.ErrNoRows), dbErr
 }
