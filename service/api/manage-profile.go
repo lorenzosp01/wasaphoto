@@ -11,7 +11,6 @@ import (
 
 func (rt *_router) uploadPhoto(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	userId, err := strconv.ParseInt(ps.ByName("user_id"), 10, 64)
-
 	if err != nil {
 		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400})
 		return
@@ -25,7 +24,6 @@ func (rt *_router) uploadPhoto(w http.ResponseWriter, r *http.Request, ps httpro
 
 	authorizationHeader := r.Header.Get("Authorization")
 	httpErr := utils.Authorize(authorizationHeader, ps.ByName("user_id"))
-
 	if httpErr.StatusCode != 0 {
 		rt.LoggerAndHttpErrorSender(w, err, httpErr)
 		return
@@ -198,12 +196,13 @@ func (rt *_router) getUserProfile(w http.ResponseWriter, r *http.Request, ps htt
 	var userIsBanned bool
 	userIsBanned, dbErr = rt.db.IsUserBannedBy(authUserId, userId)
 	if userIsBanned {
+		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 403})
+		return
+	} else {
 		if dbErr.Err != nil {
 			rt.LoggerAndHttpErrorSender(w, err, dbErr.ToHttp())
 			return
 		}
-		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 403})
-		return
 	}
 
 	var userProfile UserProfile

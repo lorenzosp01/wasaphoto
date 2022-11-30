@@ -52,6 +52,7 @@ type AppDatabase interface {
 	GetUserProfile(int64) (UserProfile, DbError)
 	getUserPhotos(int64) ([]Photo, DbError)
 	getProfileCounters(int64) (ProfileCounters, DbError)
+	BanUser(int64, int64) DbError
 }
 
 type UserProfile struct {

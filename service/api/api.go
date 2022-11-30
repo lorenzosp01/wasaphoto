@@ -109,6 +109,8 @@ func (rt *_router) LoggerAndHttpErrorSender(resWriter http.ResponseWriter, err e
 			errorResponse.Message = "Server error"
 		case http.StatusForbidden:
 			errorResponse.Message = "Forbidden"
+		case http.StatusConflict:
+			errorResponse.Message = "Conflict with the server state"
 		}
 
 		resWriter.WriteHeader(errorResponse.StatusCode)
