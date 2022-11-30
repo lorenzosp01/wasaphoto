@@ -10,6 +10,7 @@ import (
 	"wasaphoto/service/utils"
 )
 
+// todo verificare esistenza utente che si trova nel path
 func (rt *_router) uploadPhoto(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	userId, err := strconv.ParseInt(ps.ByName("user_id"), 10, 64)
 	if err != nil {

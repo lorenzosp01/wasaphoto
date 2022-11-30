@@ -53,6 +53,7 @@ type AppDatabase interface {
 	getProfileCounters(int64) (ProfileCounters, DbError)
 	TargetUser(int64, int64, string) DbError
 	IsUserAlreadyTargeted(int64, int64, string) (bool, DbError)
+	UntargetUser(int64, int64, string) DbError
 }
 
 type UserProfile struct {
