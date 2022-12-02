@@ -14,17 +14,17 @@ type userList struct {
 	Users []User `json:"users"`
 }
 
-func (rt *_router) banUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	rt.targetUser(w, r, ps, database.BanTable)
+func (rt *_router) banUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params, token utils.Token) {
+	rt.targetUser(w, r, ps, token, database.BanTable)
 }
 
-func (rt *_router) followUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	rt.targetUser(w, r, ps, database.FollowTable)
+func (rt *_router) followUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params, token utils.Token) {
+	rt.targetUser(w, r, ps, token, database.FollowTable)
 }
 
 // todo per il follow stare attento a controllare che l'utente non possa seguire un utente che lo ha bannato e vicersa
-func (rt *_router) targetUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params, entityTable string) {
-	authUserId, err := strconv.ParseInt(ps.ByName("user_id"), 10, 64)
+func (rt *_router) targetUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params, token utils.Token, entityTable string) {
+	authUserId, err := strconv.ParseInt(token.Value, 10, 64)
 	targetedUserId, err := strconv.ParseInt(ps.ByName("targeted_user_id"), 10, 64)
 
 	if targetedUserId == authUserId {
@@ -59,16 +59,16 @@ func (rt *_router) targetUser(w http.ResponseWriter, r *http.Request, ps httprou
 
 }
 
-func (rt *_router) unbanUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	rt.untargetUser(w, r, ps, database.BanTable)
+func (rt *_router) unbanUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params, token utils.Token) {
+	rt.untargetUser(w, r, ps, token, database.BanTable)
 }
 
-func (rt *_router) unfollowUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	rt.untargetUser(w, r, ps, database.FollowTable)
+func (rt *_router) unfollowUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params, token utils.Token) {
+	rt.untargetUser(w, r, ps, token, database.FollowTable)
 }
 
-func (rt *_router) untargetUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params, entityTable string) {
-	authUserId, _ := strconv.ParseInt(ps.ByName("user_id"), 10, 64)
+func (rt *_router) untargetUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params, token utils.Token, entityTable string) {
+	authUserId, _ := strconv.ParseInt(token.Value, 10, 64)
 	targetedUserId, _ := strconv.ParseInt(ps.ByName("targeted_user_id"), 10, 64)
 
 	if targetedUserId == authUserId {
@@ -92,16 +92,16 @@ func (rt *_router) untargetUser(w http.ResponseWriter, r *http.Request, ps httpr
 
 }
 
-func (rt *_router) getFollowedUsers(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	rt.getUsersList(w, r, ps, database.FollowTable)
+func (rt *_router) getFollowedUsers(w http.ResponseWriter, r *http.Request, ps httprouter.Params, token utils.Token) {
+	rt.getUsersList(w, r, ps, token, database.FollowTable)
 }
 
-func (rt *_router) getBannedUsers(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	rt.getUsersList(w, r, ps, database.BanTable)
+func (rt *_router) getBannedUsers(w http.ResponseWriter, r *http.Request, ps httprouter.Params, token utils.Token) {
+	rt.getUsersList(w, r, ps, token, database.BanTable)
 }
 
-func (rt *_router) getUsersList(w http.ResponseWriter, r *http.Request, ps httprouter.Params, entityTable string) {
-	userId, _ := strconv.ParseInt(ps.ByName("user_id"), 10, 64)
+func (rt *_router) getUsersList(w http.ResponseWriter, r *http.Request, ps httprouter.Params, token utils.Token, entityTable string) {
+	userId, _ := strconv.ParseInt(token.Value, 10, 64)
 
 	dbUsers, dbErr := rt.db.GetUsersList(userId, entityTable)
 	if dbErr.Err != nil {

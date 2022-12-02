@@ -55,6 +55,8 @@ type AppDatabase interface {
 	IsUserAlreadyTargeted(int64, int64, string) (bool, DbError)
 	UntargetUser(int64, int64, string) DbError
 	GetUsersList(int64, string) ([]User, DbError)
+	LikePhoto(int64, int64) DbError
+	UnlikePhoto(int64, int64) DbError
 }
 
 type UserProfile struct {
@@ -90,6 +92,8 @@ type DbError struct {
 	Err error
 }
 
+var EntityAlreadyExists = errors.New("entity already exists")
+
 func (e DbError) ToHttp() utils.HttpError {
 	switch e.Err {
 	case sql.ErrNoRows:
@@ -99,10 +103,15 @@ func (e DbError) ToHttp() utils.HttpError {
 		}
 	case nil:
 		return utils.HttpError{}
+	case EntityAlreadyExists:
+		return utils.HttpError{
+			StatusCode: http.StatusConflict,
+			Message:    "Conflict with the server state",
+		}
 	default:
 		return utils.HttpError{
 			StatusCode: http.StatusInternalServerError,
-			Message:    e.Err.Error(),
+			Message:    "Internal server error",
 		}
 	}
 }

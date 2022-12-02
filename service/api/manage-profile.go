@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"errors"
 	"github.com/julienschmidt/httprouter"
 	"io"
 	"net/http"
@@ -11,8 +10,8 @@ import (
 	"wasaphoto/service/utils"
 )
 
-func (rt *_router) uploadPhoto(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	userId, _ := strconv.ParseInt(ps.ByName("user_id"), 10, 64)
+func (rt *_router) uploadPhoto(w http.ResponseWriter, r *http.Request, ps httprouter.Params, token utils.Token) {
+	userId, _ := strconv.ParseInt(token.Value, 10, 64)
 
 	photo, err := io.ReadAll(r.Body)
 	if err != nil || len(photo) == 0 {
@@ -30,7 +29,8 @@ func (rt *_router) uploadPhoto(w http.ResponseWriter, r *http.Request, ps httpro
 	_, _ = w.Write([]byte("Photo uploaded successfully"))
 }
 
-func (rt *_router) getImage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+//todo controllare h
+func (rt *_router) getImage(w http.ResponseWriter, r *http.Request, ps httprouter.Params, token utils.Token) {
 
 	photoId, _ := strconv.ParseInt(ps.ByName("photo_id"), 10, 64)
 
@@ -47,8 +47,8 @@ func (rt *_router) getImage(w http.ResponseWriter, r *http.Request, ps httproute
 	_, _ = w.Write(image)
 }
 
-func (rt *_router) setMyUsername(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	userId, _ := strconv.ParseInt(ps.ByName("user_id"), 10, 64)
+func (rt *_router) setMyUsername(w http.ResponseWriter, r *http.Request, p httprouter.Params, token utils.Token) {
+	userId, _ := strconv.ParseInt(token.Value, 10, 64)
 
 	var newUsername Username
 	err := json.NewDecoder(r.Body).Decode(&newUsername)
@@ -77,8 +77,8 @@ func (rt *_router) setMyUsername(w http.ResponseWriter, r *http.Request, ps http
 	_ = json.NewEncoder(w).Encode(user)
 }
 
-func (rt *_router) deletePhoto(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	userId, _ := strconv.ParseInt(ps.ByName("user_id"), 10, 64)
+func (rt *_router) deletePhoto(w http.ResponseWriter, r *http.Request, ps httprouter.Params, token utils.Token) {
+	userId, _ := strconv.ParseInt(token.Value, 10, 64)
 	photoId, _ := strconv.ParseInt(ps.ByName("photo_id"), 10, 64)
 
 	var dbErr database.DbError
@@ -100,15 +100,9 @@ func (rt *_router) deletePhoto(w http.ResponseWriter, r *http.Request, ps httpro
 	_, _ = w.Write([]byte("Photo deleted successfully"))
 }
 
-func (rt *_router) getUserProfile(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (rt *_router) getUserProfile(w http.ResponseWriter, r *http.Request, ps httprouter.Params, token utils.Token) {
 
 	userId, _ := strconv.ParseInt(ps.ByName("user_id"), 10, 64)
-
-	token := utils.GetAuthenticationToken(r.Header.Get("Authorization"))
-	if !token.IsValid() {
-		rt.LoggerAndHttpErrorSender(w, errors.New("token invalid"), utils.HttpError{StatusCode: 401})
-		return
-	}
 
 	authUserId, _ := strconv.ParseInt(token.Value, 10, 64)
 
