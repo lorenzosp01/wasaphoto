@@ -23,7 +23,7 @@ func (db *appdbimpl) TargetUser(authUserId int64, userId int64, tableName string
 	return dbErr
 }
 
-// todo gestire qua dentro l'errore di non presenza del ban/follow come confilct
+// todo gestire qua dentro l'errore di non presenza del ban/follow come conflict
 func (db *appdbimpl) UntargetUser(authUserId int64, userId int64, tableName string) DbError {
 
 	var query string

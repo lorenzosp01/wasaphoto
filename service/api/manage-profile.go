@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/julienschmidt/httprouter"
 	"io"
 	"net/http"
@@ -10,35 +11,16 @@ import (
 	"wasaphoto/service/utils"
 )
 
-// todo verificare esistenza utente che si trova nel path
 func (rt *_router) uploadPhoto(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	userId, err := strconv.ParseInt(ps.ByName("user_id"), 10, 64)
-	if err != nil {
-		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400})
-		return
-	}
+	userId, _ := strconv.ParseInt(ps.ByName("user_id"), 10, 64)
 
-	dbErr := rt.db.UserExists(userId)
-	if dbErr.Err != nil {
-		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400})
-		return
-	}
-
-	authorizationHeader := r.Header.Get("Authorization")
-	httpErr := utils.Authorize(authorizationHeader, ps.ByName("user_id"))
-	if httpErr.StatusCode != 0 {
-		rt.LoggerAndHttpErrorSender(w, err, httpErr)
-		return
-	}
-
-	var photo []byte
-	photo, err = io.ReadAll(r.Body)
+	photo, err := io.ReadAll(r.Body)
 	if err != nil || len(photo) == 0 {
 		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400})
 		return
 	}
 
-	dbErr = rt.db.InsertPhoto(photo, userId)
+	dbErr := rt.db.InsertPhoto(photo, userId)
 	if dbErr.Err != nil {
 		rt.LoggerAndHttpErrorSender(w, err, dbErr.ToHttp())
 		return
@@ -50,28 +32,13 @@ func (rt *_router) uploadPhoto(w http.ResponseWriter, r *http.Request, ps httpro
 
 func (rt *_router) getImage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
-	userId, err := strconv.ParseInt(ps.ByName("user_id"), 10, 64)
-	if err != nil {
-		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400})
-		return
-	}
+	photoId, _ := strconv.ParseInt(ps.ByName("photo_id"), 10, 64)
 
-	photoId, err := strconv.ParseInt(ps.ByName("photo_id"), 10, 64)
-	if err != nil {
-		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400})
-		return
-	}
-
-	dbErr := rt.db.UserExists(userId)
-	if dbErr.Err != nil {
-		rt.LoggerAndHttpErrorSender(w, err, dbErr.ToHttp())
-		return
-	}
-
+	var dbErr database.DbError
 	var image []byte
 	image, dbErr = rt.db.GetImage(photoId)
 	if dbErr.Err != nil {
-		rt.LoggerAndHttpErrorSender(w, err, dbErr.ToHttp())
+		rt.LoggerAndHttpErrorSender(w, dbErr.Err, dbErr.ToHttp())
 		return
 	}
 
@@ -81,28 +48,10 @@ func (rt *_router) getImage(w http.ResponseWriter, r *http.Request, ps httproute
 }
 
 func (rt *_router) setMyUsername(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	userId, err := strconv.ParseInt(ps.ByName("user_id"), 10, 64)
-	if err != nil {
-		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400})
-		return
-	}
-
-	dbErr := rt.db.UserExists(userId)
-	if dbErr.Err != nil {
-		rt.LoggerAndHttpErrorSender(w, err, dbErr.ToHttp())
-		return
-	}
-
-	authorizationHeader := r.Header.Get("Authorization")
-	httpErr := utils.Authorize(authorizationHeader, ps.ByName("user_id"))
-
-	if httpErr.StatusCode != 0 {
-		rt.LoggerAndHttpErrorSender(w, err, httpErr)
-		return
-	}
+	userId, _ := strconv.ParseInt(ps.ByName("user_id"), 10, 64)
 
 	var newUsername utils.Username
-	err = json.NewDecoder(r.Body).Decode(&newUsername)
+	err := json.NewDecoder(r.Body).Decode(&newUsername)
 	if err != nil {
 		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400})
 		return
@@ -113,9 +62,9 @@ func (rt *_router) setMyUsername(w http.ResponseWriter, r *http.Request, ps http
 		return
 	}
 
-	dbErr = rt.db.ChangeUsername(userId, newUsername.Username)
+	dbErr := rt.db.ChangeUsername(userId, newUsername.Username)
 	if dbErr.Err != nil {
-		rt.LoggerAndHttpErrorSender(w, err, dbErr.ToHttp())
+		rt.LoggerAndHttpErrorSender(w, dbErr.Err, dbErr.ToHttp())
 		return
 	}
 
@@ -129,43 +78,21 @@ func (rt *_router) setMyUsername(w http.ResponseWriter, r *http.Request, ps http
 }
 
 func (rt *_router) deletePhoto(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	userId, err := strconv.ParseInt(ps.ByName("user_id"), 10, 64)
-	if err != nil {
-		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400})
-		return
-	}
+	userId, _ := strconv.ParseInt(ps.ByName("user_id"), 10, 64)
+	photoId, _ := strconv.ParseInt(ps.ByName("photo_id"), 10, 64)
 
-	photoId, err := strconv.ParseInt(ps.ByName("photo_id"), 10, 64)
-	if err != nil {
-		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400})
-		return
-	}
-
-	dbErr := rt.db.UserExists(userId)
-	if dbErr.Err != nil {
-		rt.LoggerAndHttpErrorSender(w, err, dbErr.ToHttp())
-		return
-	}
-
-	authorizationHeader := r.Header.Get("Authorization")
-	httpErr := utils.Authorize(authorizationHeader, ps.ByName("user_id"))
-
-	if httpErr.Message != "" {
-		rt.LoggerAndHttpErrorSender(w, err, httpErr)
-		return
-	}
-
+	var dbErr database.DbError
 	var isPhotoOwner bool
 	// Check if photo exists and if it belongs to the user
 	isPhotoOwner, dbErr = rt.db.IsPhotoOwner(photoId, userId)
 	if !isPhotoOwner {
-		rt.LoggerAndHttpErrorSender(w, err, dbErr.ToHttp())
+		rt.LoggerAndHttpErrorSender(w, dbErr.Err, dbErr.ToHttp())
 		return
 	}
 
 	dbErr = rt.db.DeletePhoto(photoId)
 	if dbErr.Err != nil {
-		rt.LoggerAndHttpErrorSender(w, err, dbErr.ToHttp())
+		rt.LoggerAndHttpErrorSender(w, dbErr.Err, dbErr.ToHttp())
 		return
 	}
 
@@ -175,34 +102,26 @@ func (rt *_router) deletePhoto(w http.ResponseWriter, r *http.Request, ps httpro
 
 func (rt *_router) getUserProfile(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
-	userId, err := strconv.ParseInt(ps.ByName("user_id"), 10, 64)
-	if err != nil {
-		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400})
-		return
-	}
-
-	//todo capire se è necessario
-	dbErr := rt.db.UserExists(userId)
-	if dbErr.Err != nil {
-		rt.LoggerAndHttpErrorSender(w, err, dbErr.ToHttp())
-		return
-	}
+	userId, _ := strconv.ParseInt(ps.ByName("user_id"), 10, 64)
 
 	token := utils.GetAuthenticationToken(r.Header.Get("Authorization"))
 	if !token.IsValid() {
-		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400})
+		rt.LoggerAndHttpErrorSender(w, errors.New("token invalid"), utils.HttpError{StatusCode: 401})
 		return
 	}
 
 	authUserId, _ := strconv.ParseInt(token.Value, 10, 64)
+
+	//todo spostare if dentro la funzione di interazione col db
 	var userIsBanned bool
+	var dbErr database.DbError
 	userIsBanned, dbErr = rt.db.IsUserAlreadyTargeted(authUserId, userId, database.BanTable)
 	if userIsBanned {
-		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 403})
+		rt.LoggerAndHttpErrorSender(w, dbErr.Err, utils.HttpError{StatusCode: 403})
 		return
 	} else {
 		if dbErr.Err != nil {
-			rt.LoggerAndHttpErrorSender(w, err, dbErr.ToHttp())
+			rt.LoggerAndHttpErrorSender(w, dbErr.Err, dbErr.ToHttp())
 			return
 		}
 	}
@@ -212,7 +131,7 @@ func (rt *_router) getUserProfile(w http.ResponseWriter, r *http.Request, ps htt
 	userProfile.fromDatabase(up)
 
 	if dbErr.Err != nil {
-		rt.LoggerAndHttpErrorSender(w, err, dbErr.ToHttp())
+		rt.LoggerAndHttpErrorSender(w, dbErr.Err, dbErr.ToHttp())
 		return
 	}
 

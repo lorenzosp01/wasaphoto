@@ -44,7 +44,7 @@ type AppDatabase interface {
 	GetUserId(string) (int64, DbError)
 	GetImage(int64) ([]byte, DbError)
 	InsertPhoto([]byte, int64) DbError
-	UserExists(int64) DbError
+	EntityExists(int64, string) DbError
 	ChangeUsername(int64, string) DbError
 	DeletePhoto(int64) DbError
 	IsPhotoOwner(int64, int64) (bool, DbError)
@@ -126,16 +126,7 @@ func New(db *sql.DB) (AppDatabase, error) {
 		return nil, errors.New("database is required when building a AppDatabase")
 	}
 
-	// Check if table exists. If not, the database is empty, and we need to create the structure
-	var tableName string
-	err := db.QueryRow(`SELECT name FROM sqlite_master WHERE type='table' AND name='example_table';`).Scan(&tableName)
-	if errors.Is(err, sql.ErrNoRows) {
-		sqlStmt := `CREATE TABLE example_table (id INTEGER NOT NULL PRIMARY KEY, name TEXT);`
-		_, err = db.Exec(sqlStmt)
-		if err != nil {
-			return nil, fmt.Errorf("error creating database structure: %w", err)
-		}
-	}
+	_, _ = db.Exec("PRAGMA foreign_keys = ON")
 
 	return &appdbimpl{
 		c: db,
@@ -148,8 +139,8 @@ func (db *appdbimpl) Ping() error {
 
 // UserExists returns an error if the user does not exist or if there is an error.
 // during query execution.
-func (db *appdbimpl) UserExists(id int64) DbError {
-	query := fmt.Sprintf("SELECT id FROM %s WHERE id=?", UserTable)
+func (db *appdbimpl) EntityExists(id int64, tableToUse string) DbError {
+	query := fmt.Sprintf("SELECT id FROM %s WHERE id=?", tableToUse)
 	return DbError{db.c.QueryRow(query, id).Scan(&id)}
 }
 

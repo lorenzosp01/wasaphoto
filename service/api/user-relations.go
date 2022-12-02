@@ -9,7 +9,6 @@ import (
 	"wasaphoto/service/utils"
 )
 
-// todo verificare esistenza utente autenticato e quello da targettare
 func (rt *_router) banUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	rt.targetUser(w, r, ps, database.BanTable)
 }
@@ -18,33 +17,17 @@ func (rt *_router) followUser(w http.ResponseWriter, r *http.Request, ps httprou
 	rt.targetUser(w, r, ps, database.FollowTable)
 }
 
-// todo per il follow stare attento a controllare che l'utente non possa seguire un utente lo ha bannato e vicersa
+// todo per il follow stare attento a controllare che l'utente non possa seguire un utente che lo ha bannato e vicersa
 func (rt *_router) targetUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params, tableToUse string) {
 	authUserId, err := strconv.ParseInt(ps.ByName("user_id"), 10, 64)
-	if err != nil {
-		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400})
-		return
-	}
-
-	authorizationHeader := r.Header.Get("Authorization")
-	httpErr := utils.Authorize(authorizationHeader, ps.ByName("user_id"))
-	if httpErr.StatusCode != 0 {
-		rt.LoggerAndHttpErrorSender(w, err, httpErr)
-		return
-	}
-
 	targetedUserId, err := strconv.ParseInt(ps.ByName("targeted_user_id"), 10, 64)
-	if err != nil {
-		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400})
-		return
-	}
 
 	if targetedUserId == authUserId {
 		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 403})
 		return
 	}
 
-	//todo i doppi inserimenti di riga nel database vanno gestiti come dberror
+	//todo i possibili doppi inserimenti di riga nel database vanno gestiti come dberror
 	isTargeted, dbErr := rt.db.IsUserAlreadyTargeted(authUserId, targetedUserId, tableToUse)
 	if isTargeted {
 		if dbErr.Err != nil {
@@ -80,27 +63,11 @@ func (rt *_router) unfollowUser(w http.ResponseWriter, r *http.Request, ps httpr
 }
 
 func (rt *_router) untargetUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params, tableToUse string) {
-	authUserId, err := strconv.ParseInt(ps.ByName("user_id"), 10, 64)
-	if err != nil {
-		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400})
-		return
-	}
-
-	authorizationHeader := r.Header.Get("Authorization")
-	httpErr := utils.Authorize(authorizationHeader, ps.ByName("user_id"))
-	if httpErr.StatusCode != 0 {
-		rt.LoggerAndHttpErrorSender(w, err, httpErr)
-		return
-	}
-
-	targetedUserId, err := strconv.ParseInt(ps.ByName("targeted_user_id"), 10, 64)
-	if err != nil {
-		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400})
-		return
-	}
+	authUserId, _ := strconv.ParseInt(ps.ByName("user_id"), 10, 64)
+	targetedUserId, _ := strconv.ParseInt(ps.ByName("targeted_user_id"), 10, 64)
 
 	if targetedUserId == authUserId {
-		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 403})
+		rt.LoggerAndHttpErrorSender(w, errors.New("a user can't untarget himself"), utils.HttpError{StatusCode: 403})
 		return
 	}
 

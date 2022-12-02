@@ -17,19 +17,6 @@ func GetAuthenticationToken(authorizationHeader string) Token {
 	return Token{}
 }
 
-func Authorize(authorizationHeader string, urlId string) HttpError {
-	var error HttpError
-	token := GetAuthenticationToken(authorizationHeader)
-
-	if token.IsValid() {
-		if token.Value == urlId {
-			return error
-		} else {
-			error.StatusCode = 403
-			return error
-		}
-	}
-
-	error.StatusCode = 401
-	return error
+func Authorize(token Token, urlId string) bool {
+	return token.Value == urlId
 }
