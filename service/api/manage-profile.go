@@ -50,7 +50,7 @@ func (rt *_router) getImage(w http.ResponseWriter, r *http.Request, ps httproute
 func (rt *_router) setMyUsername(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	userId, _ := strconv.ParseInt(ps.ByName("user_id"), 10, 64)
 
-	var newUsername utils.Username
+	var newUsername Username
 	err := json.NewDecoder(r.Body).Decode(&newUsername)
 	if err != nil {
 		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400})

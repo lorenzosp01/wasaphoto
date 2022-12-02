@@ -1,16 +1,13 @@
 package api
 
-import "wasaphoto/service/database"
+import (
+	"regexp"
+	"wasaphoto/service/database"
+)
 
 type User struct {
 	Id       int64  `json:"identifier"`
 	Username string `json:"username"`
-}
-
-type UserProfile struct {
-	UserInfo    User            `json:"user_info"`
-	Photos      []Photo         `json:"photos"`
-	ProfileInfo ProfileCounters `json:"profileInfo"`
 }
 
 type ProfileCounters struct {
@@ -26,14 +23,41 @@ type Photo struct {
 	PhotoInfo  PhotoCounters `json:"photoInfo"`
 }
 
+type UserIdentifier struct {
+	Id int64 `json:"identifier"`
+}
+
+type Username struct {
+	Username string `json:"username"`
+}
+
+
+func (u Username) IsValid() bool {
+	var valid = false
+	if len(u.Username) > 0 && len(u.Username) < 16 {
+		valid, _ = regexp.Match(`^[a-zA-Z0-9]+$`, []byte(u.Username))
+	}
+	return valid
+}
+
 type PhotoCounters struct {
 	LikesCounter    int `json:"likesCounter"`
 	CommentsCounter int `json:"commentsCounter"`
 }
 
+type UserProfile struct {
+	UserInfo    User            `json:"user_info"`
+	Photos      []Photo         `json:"photos"`
+	ProfileInfo ProfileCounters `json:"profileInfo"`
+}
+
+func (u *User) fromDatabase(dbUser database.User) {
+	u.Id = dbUser.Id
+	u.Username = dbUser.Username
+}
+
 func (up *UserProfile) fromDatabase(upDb database.UserProfile) {
-	up.UserInfo.Id = upDb.UserInfo.Id
-	up.UserInfo.Username = upDb.UserInfo.Username
+	up.UserInfo.fromDatabase(upDb.UserInfo)
 	for _, photo := range upDb.Photos {
 		newPhoto := Photo{}
 		newPhoto.fromDatabase(photo)

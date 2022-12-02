@@ -98,20 +98,7 @@ type _router struct {
 
 func (rt *_router) LoggerAndHttpErrorSender(resWriter http.ResponseWriter, err error, errorResponse utils.HttpError) {
 	if errorResponse.StatusCode != 0 {
-		switch errorResponse.StatusCode {
-		case http.StatusNotFound:
-			errorResponse.Message = "Not found"
-		case http.StatusBadRequest:
-			errorResponse.Message = "Bad request"
-		case http.StatusUnauthorized:
-			errorResponse.Message = "Unauthorized"
-		case http.StatusInternalServerError:
-			errorResponse.Message = "Server error"
-		case http.StatusForbidden:
-			errorResponse.Message = "Forbidden"
-		case http.StatusConflict:
-			errorResponse.Message = "Conflict with the server state"
-		}
+		errorResponse.Message = err.Error()
 
 		resWriter.WriteHeader(errorResponse.StatusCode)
 		_, _ = resWriter.Write([]byte(errorResponse.Message))

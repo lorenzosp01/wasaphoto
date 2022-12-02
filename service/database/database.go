@@ -54,6 +54,7 @@ type AppDatabase interface {
 	TargetUser(int64, int64, string) DbError
 	IsUserAlreadyTargeted(int64, int64, string) (bool, DbError)
 	UntargetUser(int64, int64, string) DbError
+	GetUsersList(int64, string) ([]User, DbError)
 }
 
 type UserProfile struct {
@@ -101,7 +102,7 @@ func (e DbError) ToHttp() utils.HttpError {
 	default:
 		return utils.HttpError{
 			StatusCode: http.StatusInternalServerError,
-			Message:    "Internal server error",
+			Message:    e.Err.Error(),
 		}
 	}
 }
@@ -118,6 +119,7 @@ const (
 type appdbimpl struct {
 	c *sql.DB
 }
+
 
 // New returns a new instance of AppDatabase based on the SQLite connection `db`.
 // `db` is required - an error will be returned if `db` is `nil`.

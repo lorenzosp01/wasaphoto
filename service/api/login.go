@@ -5,12 +5,11 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"wasaphoto/service/database"
-	"wasaphoto/service/utils"
 )
 
 func (rt *_router) doLogin(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
-	var username utils.Username
+	var username Username
 	err := json.NewDecoder(r.Body).Decode(&username)
 
 	if err != nil {
@@ -28,7 +27,7 @@ func (rt *_router) doLogin(w http.ResponseWriter, r *http.Request, ps httprouter
 		return
 	}
 
-	var id utils.UserIdentifier
+	var id UserIdentifier
 	var dbErr database.DbError
 
 	id.Id, dbErr = rt.db.GetUserId(username.Username)

@@ -19,8 +19,8 @@ func (rt *_router) Handler() http.Handler {
 	rt.router.DELETE("/profiles/:user_id/ban/:targeted_user_id", rt.wrap(rt.authWrap(rt.unbanUser), []string{database.UserTable, database.UserTable}))
 	rt.router.PUT("/profiles/:user_id/following/:targeted_user_id", rt.wrap(rt.authWrap(rt.followUser), []string{database.UserTable, database.UserTable}))
 	rt.router.DELETE("/profiles/:user_id/following/:targeted_user_id", rt.wrap(rt.authWrap(rt.unfollowUser), []string{database.UserTable, database.UserTable}))
-	//rt.router.GET("/profiles/:user_id/following/", rt.getFollowingUsers)
-	//rt.router.GET("/profiles/:user_id/ban/:user_id", rt.getBannedUsers)
+	rt.router.GET("/profiles/:user_id/following/", rt.wrap(rt.authWrap(rt.getFollowedUsers), []string{database.UserTable}))
+	rt.router.GET("/profiles/:user_id/ban/", rt.wrap(rt.authWrap(rt.getBannedUsers), []string{database.UserTable}))
 	// Special routes
 	rt.router.GET("/liveness", rt.liveness)
 
