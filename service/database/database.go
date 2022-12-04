@@ -57,6 +57,9 @@ type AppDatabase interface {
 	GetUsersList(int64, string) ([]User, DbError)
 	LikePhoto(int64, int64) DbError
 	UnlikePhoto(int64, int64) DbError
+	CommentPhoto(int64, int64, string) DbError
+	GetPhotoComments(int64) ([]Comment, DbError)
+	DeleteComment(int64) DbError
 }
 
 type UserProfile struct {
@@ -69,6 +72,13 @@ type ProfileCounters struct {
 	PhotosCounter    int
 	FollowingCounter int
 	FollowersCounter int
+}
+
+type Comment struct {
+	Id        int64
+	Owner     int64
+	Content   string
+	CreatedAt string
 }
 
 type Photo struct {
@@ -128,7 +138,6 @@ const (
 type appdbimpl struct {
 	c *sql.DB
 }
-
 
 // New returns a new instance of AppDatabase based on the SQLite connection `db`.
 // `db` is required - an error will be returned if `db` is `nil`.

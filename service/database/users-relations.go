@@ -54,28 +54,28 @@ func (db *appdbimpl) GetUsersList(authUserId int64, tableName string) ([]User, D
 		return []User{}, DbError{errors.New("invalid table name")}
 	}
 
-	var DbErr DbError
+	var dbErr DbError
 	var rows *sql.Rows
-	rows, DbErr.Err = db.c.Query(query, authUserId)
+	rows, dbErr.Err = db.c.Query(query, authUserId)
 	var users []User
 
 	for rows.Next() {
 		var user User
-		DbErr.Err = rows.Scan(&user.Id)
-		if DbErr.Err != nil {
-			return users, DbErr
+		dbErr.Err = rows.Scan(&user.Id)
+		if dbErr.Err != nil {
+			return users, dbErr
 		}
 		query = fmt.Sprintf("SELECT name FROM %s WHERE id=?", UserTable)
-		DbErr.Err = db.c.QueryRow(query, user.Id).Scan(&user.Username)
-		if DbErr.Err != nil {
-			return users, DbErr
+		dbErr.Err = db.c.QueryRow(query, user.Id).Scan(&user.Username)
+		if dbErr.Err != nil {
+			return users, dbErr
 		}
 		users = append(users, user)
 	}
 
 	if users == nil {
-		DbErr.Err = errors.New("no users found")
+		dbErr.Err = errors.New("no users found")
 	}
 
-	return users, DbErr
+	return users, dbErr
 }

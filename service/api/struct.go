@@ -23,6 +23,20 @@ type Photo struct {
 	PhotoInfo  PhotoCounters `json:"photoInfo"`
 }
 
+type Comment struct {
+	Id        int64  `json:"id"`
+	Owner     int64  `json:"owner"`
+	Content   string `json:"content"`
+	CreatedAt string `json:"uploadedAt"`
+}
+
+func (c *Comment) fromDatabase(dbComment database.Comment) {
+	c.Id = dbComment.Id
+	c.Owner = dbComment.Owner
+	c.Content = dbComment.Content
+	c.CreatedAt = dbComment.CreatedAt
+}
+
 type UserIdentifier struct {
 	Id int64 `json:"identifier"`
 }
@@ -30,7 +44,6 @@ type UserIdentifier struct {
 type Username struct {
 	Username string `json:"username"`
 }
-
 
 func (u Username) IsValid() bool {
 	var valid = false
