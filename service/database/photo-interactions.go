@@ -9,7 +9,6 @@ import (
 
 func (db *appdbimpl) LikePhoto(authUserId int64, photoId int64) DbError {
 	var dbErr DbError
-
 	query := fmt.Sprintf("INSERT INTO %s (owner, photo) VALUES (?, ?)", LikeTable)
 	_, dbErr.Err = db.c.Exec(query, authUserId, photoId)
 
@@ -23,9 +22,8 @@ func (db *appdbimpl) LikePhoto(authUserId int64, photoId int64) DbError {
 }
 
 func (db *appdbimpl) UnlikePhoto(authUserId int64, photoId int64) DbError {
-	var dbErr DbError
 	var res sql.Result
-
+	var dbErr DbError
 	query := fmt.Sprintf("DELETE FROM %s WHERE owner=? AND photo=?", LikeTable)
 	res, dbErr.Err = db.c.Exec(query, authUserId, photoId)
 

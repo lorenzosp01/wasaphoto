@@ -103,6 +103,8 @@ type DbError struct {
 }
 
 var EntityAlreadyExists = errors.New("entity already exists")
+var ForbiddenAction = errors.New("forbidden action")
+var BadInput = errors.New("bad input")
 
 func (e DbError) ToHttp() utils.HttpError {
 	switch e.Err {
@@ -113,10 +115,20 @@ func (e DbError) ToHttp() utils.HttpError {
 		}
 	case nil:
 		return utils.HttpError{}
+	case BadInput:
+		return utils.HttpError{
+			StatusCode: http.StatusBadRequest,
+			Message:    "Bad parameters",
+		}
 	case EntityAlreadyExists:
 		return utils.HttpError{
 			StatusCode: http.StatusConflict,
 			Message:    "Conflict with the server state",
+		}
+	case ForbiddenAction:
+		return utils.HttpError{
+			StatusCode: http.StatusForbidden,
+			Message:    "Forbidden action",
 		}
 	default:
 		return utils.HttpError{
@@ -164,13 +176,13 @@ func (db *appdbimpl) EntityExists(id int64, tableToUse string) DbError {
 	return DbError{db.c.QueryRow(query, id).Scan(&id)}
 }
 
-func (db *appdbimpl) IsPhotoOwner(id int64, owner_id int64) (bool, DbError) {
-	var realOwner int64
+func (db *appdbimpl) IsPhotoOwner(id int64, ownerId int64) (bool, DbError) {
 	var dbErr DbError
-	query := fmt.Sprintf("SELECT owner FROM %s WHERE id=?", PhotoTable)
-	dbErr.Err = db.c.QueryRow(query, id, owner_id).Scan(&realOwner)
+	var count int64
+	query := fmt.Sprintf("SELECT count(*) FROM %s WHERE id=? AND owner=?", PhotoTable)
+	dbErr.Err = db.c.QueryRow(query, id, ownerId).Scan(&count)
 
-	return realOwner == owner_id, dbErr
+	return count > 0, dbErr
 }
 
 func (db *appdbimpl) IsUserAlreadyTargeted(userId int64, targetedUserId int64, tableName string) (bool, DbError) {
@@ -178,14 +190,15 @@ func (db *appdbimpl) IsUserAlreadyTargeted(userId int64, targetedUserId int64, t
 	var query string
 	switch tableName {
 	case BanTable:
-		query = fmt.Sprintf("SELECT banned FROM %s WHERE banned=? AND banning=?", BanTable)
+		query = fmt.Sprintf("SELECT count(*) FROM %s WHERE banned=? AND banning=?", BanTable)
 	case FollowTable:
-		query = fmt.Sprintf("SELECT follower FROM %s WHERE following=? AND follower=?", FollowTable)
+		query = fmt.Sprintf("SELECT count(*) FROM %s WHERE following=? AND follower=?", FollowTable)
 	default:
 		return false, DbError{errors.New("invalid table name")}
 	}
 
-	dbErr.Err = db.c.QueryRow(query, targetedUserId, userId).Scan(&userId)
+	var targetCount int
+	dbErr.Err = db.c.QueryRow(query, targetedUserId, userId).Scan(&targetCount)
 
-	return !errors.Is(dbErr.Err, sql.ErrNoRows), dbErr
+	return targetCount > 0, dbErr
 }
