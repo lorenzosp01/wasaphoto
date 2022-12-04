@@ -586,8 +586,10 @@ paths:
       security:
         - bearerAuth: []
 
-  /stream:
+  /stream/{user_id}:
     get:
+      parameters:
+        - { $ref: "#/components/parameters/user_id" }
       tags: ["stream"]
       summary:  Gets authenticated user photos stream
       description: |-

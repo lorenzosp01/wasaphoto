@@ -29,7 +29,7 @@ func (rt *_router) uploadPhoto(w http.ResponseWriter, r *http.Request, ps httpro
 	_, _ = w.Write([]byte("Photo uploaded successfully"))
 }
 
-//todo controllare h
+// todo controllare h
 func (rt *_router) getImage(w http.ResponseWriter, r *http.Request, ps httprouter.Params, token utils.Token) {
 
 	photoId, _ := strconv.ParseInt(ps.ByName("photo_id"), 10, 64)
@@ -103,8 +103,19 @@ func (rt *_router) deletePhoto(w http.ResponseWriter, r *http.Request, ps httpro
 func (rt *_router) getUserProfile(w http.ResponseWriter, r *http.Request, ps httprouter.Params, token utils.Token) {
 
 	userId, _ := strconv.ParseInt(ps.ByName("user_id"), 10, 64)
-
 	authUserId, _ := strconv.ParseInt(token.Value, 10, 64)
+
+	photosAmount, err := strconv.ParseInt(r.URL.Query().Get("amount"), 10, 64)
+	if err != nil {
+		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400})
+		return
+	}
+
+	photosOffset, err := strconv.ParseInt(r.URL.Query().Get("offset"), 10, 64)
+	if err != nil {
+		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400})
+		return
+	}
 
 	//todo spostare if dentro la funzione di interazione col db
 	var userIsBanned bool
@@ -121,7 +132,7 @@ func (rt *_router) getUserProfile(w http.ResponseWriter, r *http.Request, ps htt
 	}
 
 	var userProfile UserProfile
-	up, dbErr := rt.db.GetUserProfile(userId)
+	up, dbErr := rt.db.GetUserProfile(userId, photosAmount, photosOffset)
 	userProfile.fromDatabase(up)
 
 	if dbErr.Err != nil {

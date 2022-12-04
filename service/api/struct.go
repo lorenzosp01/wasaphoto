@@ -5,6 +5,10 @@ import (
 	"wasaphoto/service/database"
 )
 
+type CommentsObject struct {
+	Comments []Comment `json:"comments"`
+}
+
 type User struct {
 	Id       int64  `json:"identifier"`
 	Username string `json:"username"`
@@ -14,6 +18,10 @@ type ProfileCounters struct {
 	PhotosCounter    int `json:"photosCounter"`
 	FollowingCounter int `json:"followingCounter"`
 	FollowersCounter int `json:"followersCounter"`
+}
+
+type UserStream struct {
+	Photos []Photo `json:"photos"`
 }
 
 type Photo struct {

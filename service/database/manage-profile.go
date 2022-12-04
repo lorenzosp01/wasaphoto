@@ -49,7 +49,7 @@ func (db *appdbimpl) DeletePhoto(id int64) DbError {
 	}
 }
 
-func (db *appdbimpl) GetUserProfile(id int64) (UserProfile, DbError) {
+func (db *appdbimpl) GetUserProfile(id int64, photosAmount int64, photosOffset int64) (UserProfile, DbError) {
 	var up UserProfile
 	var dbErr DbError
 
@@ -61,7 +61,7 @@ func (db *appdbimpl) GetUserProfile(id int64) (UserProfile, DbError) {
 		return up, dbErr
 	}
 
-	up.Photos, dbErr = db.getUserPhotos(id)
+	up.Photos, dbErr = db.GetUserPhotos(id, photosAmount, photosOffset)
 	if dbErr.Err != nil {
 		return up, dbErr
 	}
@@ -71,12 +71,12 @@ func (db *appdbimpl) GetUserProfile(id int64) (UserProfile, DbError) {
 	return up, dbErr
 }
 
-func (db *appdbimpl) getUserPhotos(id int64) ([]Photo, DbError) {
+func (db *appdbimpl) GetUserPhotos(id int64, amount int64, offset int64) ([]Photo, DbError) {
 	// Per ogni foto
 	var dbErr DbError
 	var rows *sql.Rows
-	query := fmt.Sprintf("SELECT id, uploaded_at FROM %s WHERE owner=?", PhotoTable)
-	rows, dbErr.Err = db.c.Query(query, id)
+	query := fmt.Sprintf("SELECT id, uploaded_at FROM %s WHERE owner=? LIMIT ? OFFSET ?", PhotoTable)
+	rows, dbErr.Err = db.c.Query(query, id, amount, offset)
 
 	if dbErr.Err != nil {
 		return nil, dbErr
@@ -98,6 +98,7 @@ func (db *appdbimpl) getUserPhotos(id int64) ([]Photo, DbError) {
 		}
 
 		photos = append(photos, photo)
+		amount--
 	}
 
 	return photos, dbErr

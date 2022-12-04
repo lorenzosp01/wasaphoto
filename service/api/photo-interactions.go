@@ -9,10 +9,6 @@ import (
 	"wasaphoto/service/utils"
 )
 
-type Comments struct {
-	Comments []Comment `json:"comments"`
-}
-
 // todo controllare che la foto appartieni all'utente nel path
 func (rt *_router) likePhoto(w http.ResponseWriter, r *http.Request, ps httprouter.Params, token utils.Token) {
 	authUserId, _ := strconv.ParseInt(token.Value, 10, 64)
@@ -49,7 +45,7 @@ func (rt *_router) unlikePhoto(w http.ResponseWriter, r *http.Request, ps httpro
 
 	photoId, _ := strconv.ParseInt(ps.ByName("photo_id"), 10, 64)
 	//	ownerPhotoId, _ := strconv.ParseInt(ps.ByName("user_id"), 10, 64)
-	// se owner ha bloccato authUserId, errore
+	// se owner ha bannato authUserId, errore
 
 	dbErr := rt.db.UnlikePhoto(authUserId, photoId)
 	if dbErr.Err != nil {
@@ -92,7 +88,7 @@ func (rt *_router) getPhotoComments(w http.ResponseWriter, r *http.Request, ps h
 	//	ownerPhotoId, _ := strconv.ParseInt(ps.ByName("user_id"), 10, 64)
 	// se owner ha bloccato authUserId, errore
 
-	var commentsObject Comments
+	var commentsObject CommentsObject
 	dbComments, dbErr := rt.db.GetPhotoComments(photoId)
 	if dbErr.Err != nil {
 		rt.LoggerAndHttpErrorSender(w, dbErr.Err, dbErr.ToHttp())

@@ -48,8 +48,8 @@ type AppDatabase interface {
 	ChangeUsername(int64, string) DbError
 	DeletePhoto(int64) DbError
 	IsPhotoOwner(int64, int64) (bool, DbError)
-	GetUserProfile(int64) (UserProfile, DbError)
-	getUserPhotos(int64) ([]Photo, DbError)
+	GetUserProfile(int64, int64, int64) (UserProfile, DbError)
+	GetUserPhotos(int64, int64, int64) ([]Photo, DbError)
 	getProfileCounters(int64) (ProfileCounters, DbError)
 	TargetUser(int64, int64, string) DbError
 	IsUserAlreadyTargeted(int64, int64, string) (bool, DbError)

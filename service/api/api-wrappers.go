@@ -46,7 +46,7 @@ func (rt *_router) wrap(fn httpRouterHandler, dbTables []string) func(w http.Res
 func (rt *_router) authWrap(fn httpRouterHandler) func(w http.ResponseWriter, r *http.Request, ps httprouter.Params, token utils.Token) {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params, token utils.Token) {
 
-		isAuthorized := utils.Authorize(token, ps.ByName("auth_user_id"))
+		isAuthorized := utils.Authorize(token, ps.ByName("user_id"))
 
 		if !isAuthorized {
 			rt.LoggerAndHttpErrorSender(w, errors.New("user not authorized"), utils.HttpError{StatusCode: 401})
