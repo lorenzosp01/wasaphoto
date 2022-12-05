@@ -22,7 +22,6 @@ func (rt *_router) followUser(w http.ResponseWriter, r *http.Request, ps httprou
 	rt.targetUser(w, r, ps, token, database.FollowTable)
 }
 
-// todo per il follow stare attento a controllare che l'utente non possa seguire un utente che lo ha bannato e vicersa
 func (rt *_router) targetUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params, token utils.Token, entityTable string) {
 	authUserId, err := strconv.ParseInt(token.Value, 10, 64)
 	targetedUserId, err := strconv.ParseInt(ps.ByName("targeted_user_id"), 10, 64)
@@ -32,18 +31,7 @@ func (rt *_router) targetUser(w http.ResponseWriter, r *http.Request, ps httprou
 		return
 	}
 
-	//todo i possibili doppi inserimenti di riga nel database vanno gestiti come dberror
-	isTargeted, dbErr := rt.db.IsUserAlreadyTargeted(authUserId, targetedUserId, entityTable)
-	if isTargeted {
-		if dbErr.Err != nil {
-			rt.LoggerAndHttpErrorSender(w, dbErr.Err, dbErr.ToHttp())
-		} else {
-			rt.LoggerAndHttpErrorSender(w, errors.New("user already targeted"), utils.HttpError{StatusCode: 409})
-		}
-		return
-	}
-
-	dbErr = rt.db.TargetUser(authUserId, targetedUserId, entityTable)
+	dbErr := rt.db.TargetUser(authUserId, targetedUserId, entityTable)
 	if dbErr.Err != nil {
 		rt.LoggerAndHttpErrorSender(w, dbErr.Err, dbErr.ToHttp())
 		return
