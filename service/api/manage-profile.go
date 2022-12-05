@@ -29,12 +29,23 @@ func (rt *_router) uploadPhoto(w http.ResponseWriter, r *http.Request, ps httpro
 	_, _ = w.Write([]byte("Photo uploaded successfully"))
 }
 
-// todo controllare h
 func (rt *_router) getImage(w http.ResponseWriter, r *http.Request, ps httprouter.Params, token utils.Token) {
 
 	photoId, _ := strconv.ParseInt(ps.ByName("photo_id"), 10, 64)
+	authUserId, _ := strconv.ParseInt(token.Value, 10, 64)
+	userId, _ := strconv.ParseInt(ps.ByName("user_id"), 10, 64)
 
-	var dbErr database.DbError
+	userIsBanned, dbErr := rt.db.IsUserAlreadyTargeted(authUserId, userId, database.BanTable)
+	if userIsBanned {
+		rt.LoggerAndHttpErrorSender(w, dbErr.Err, utils.HttpError{StatusCode: 403})
+		return
+	} else {
+		if dbErr.Err != nil {
+			rt.LoggerAndHttpErrorSender(w, dbErr.Err, dbErr.ToHttp())
+			return
+		}
+	}
+
 	var image []byte
 	image, dbErr = rt.db.GetImage(photoId)
 	if dbErr.Err != nil {
@@ -78,17 +89,9 @@ func (rt *_router) setMyUsername(w http.ResponseWriter, r *http.Request, p httpr
 }
 
 func (rt *_router) deletePhoto(w http.ResponseWriter, r *http.Request, ps httprouter.Params, token utils.Token) {
-	userId, _ := strconv.ParseInt(token.Value, 10, 64)
 	photoId, _ := strconv.ParseInt(ps.ByName("photo_id"), 10, 64)
 
 	var dbErr database.DbError
-	var isPhotoOwner bool
-	// Check if photo exists and if it belongs to the user
-	isPhotoOwner, dbErr = rt.db.IsPhotoOwner(photoId, userId)
-	if !isPhotoOwner {
-		rt.LoggerAndHttpErrorSender(w, dbErr.Err, dbErr.ToHttp())
-		return
-	}
 
 	dbErr = rt.db.DeletePhoto(photoId)
 	if dbErr.Err != nil {
@@ -117,7 +120,6 @@ func (rt *_router) getUserProfile(w http.ResponseWriter, r *http.Request, ps htt
 		return
 	}
 
-	//todo spostare if dentro la funzione di interazione col db
 	var userIsBanned bool
 	var dbErr database.DbError
 	userIsBanned, dbErr = rt.db.IsUserAlreadyTargeted(authUserId, userId, database.BanTable)

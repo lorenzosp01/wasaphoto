@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/mattn/go-sqlite3"
 )
 
 func (db *appdbimpl) TargetUser(authUserId int64, userId int64, tableName string) DbError {
@@ -20,11 +21,15 @@ func (db *appdbimpl) TargetUser(authUserId int64, userId int64, tableName string
 
 	var dbErr DbError
 	_, dbErr.Err = db.c.Exec(query, authUserId, userId)
+	if dbErr.Err != nil {
+		if dbErr.Err.(sqlite3.Error).Code == sqlite3.ErrConstraint {
+			return DbError{EntityAlreadyExists}
+		}
+	}
 
 	return dbErr
 }
 
-// todo gestire qua dentro l'errore di non presenza del ban/follow come conflict
 func (db *appdbimpl) UntargetUser(authUserId int64, userId int64, tableName string) DbError {
 
 	var query string
@@ -38,8 +43,14 @@ func (db *appdbimpl) UntargetUser(authUserId int64, userId int64, tableName stri
 	}
 
 	var dbErr DbError
-	_, dbErr.Err = db.c.Exec(query, authUserId, userId)
-
+	var res sql.Result
+	res, dbErr.Err = db.c.Exec(query, authUserId, userId)
+	if dbErr.Err == nil {
+		affected, _ := res.RowsAffected()
+		if affected == 0 {
+			return DbError{sql.ErrNoRows}
+		}
+	}
 	return dbErr
 }
 

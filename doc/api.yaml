@@ -610,7 +610,7 @@ paths:
       security:
         - bearerAuth: []
 
-  /profiles/{user_id}/photos/{photo_id}/likes/{auth_user_id}:
+  /profiles/{user_id}/photos/{photo_id}/likes:
     parameters:
       - {$ref: "#/components/parameters/photo_id"}
       - {$ref: "#/components/parameters/user_id" }

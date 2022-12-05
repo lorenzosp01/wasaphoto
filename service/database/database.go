@@ -47,7 +47,6 @@ type AppDatabase interface {
 	EntityExists(int64, string) DbError
 	ChangeUsername(int64, string) DbError
 	DeletePhoto(int64) DbError
-	IsPhotoOwner(int64, int64) (bool, DbError)
 	GetUserProfile(int64, int64, int64) (UserProfile, DbError)
 	GetUserPhotos(int64, int64, int64) ([]Photo, DbError)
 	getProfileCounters(int64) (ProfileCounters, DbError)
@@ -60,6 +59,7 @@ type AppDatabase interface {
 	CommentPhoto(int64, int64, string) DbError
 	GetPhotoComments(int64) ([]Comment, DbError)
 	DeleteComment(int64) DbError
+	DoesEntityBelongsTo(int64, int64, string) (bool, DbError)
 }
 
 type UserProfile struct {
@@ -169,18 +169,24 @@ func (db *appdbimpl) Ping() error {
 	return db.c.Ping()
 }
 
-// UserExists returns an error if the user does not exist or if there is an error.
-// during query execution.
 func (db *appdbimpl) EntityExists(id int64, tableToUse string) DbError {
 	query := fmt.Sprintf("SELECT id FROM %s WHERE id=?", tableToUse)
 	return DbError{db.c.QueryRow(query, id).Scan(&id)}
 }
 
-func (db *appdbimpl) IsPhotoOwner(id int64, ownerId int64) (bool, DbError) {
+func (db *appdbimpl) DoesEntityBelongsTo(entityId int64, ownerId int64, entityTable string) (bool, DbError) {
 	var dbErr DbError
 	var count int64
-	query := fmt.Sprintf("SELECT count(*) FROM %s WHERE id=? AND owner=?", PhotoTable)
-	dbErr.Err = db.c.QueryRow(query, id, ownerId).Scan(&count)
+	var query string
+
+	switch entityTable {
+	case CommentTable:
+		query = fmt.Sprintf("SELECT count(*) FROM %s WHERE id=? AND photo=?", entityTable)
+	default:
+		query = fmt.Sprintf("SELECT count(*) FROM %s WHERE id=? AND owner=?", entityTable)
+	}
+
+	dbErr.Err = db.c.QueryRow(query, entityId, ownerId).Scan(&count)
 
 	return count > 0, dbErr
 }
