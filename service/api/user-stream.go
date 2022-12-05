@@ -10,9 +10,15 @@ import (
 	"wasaphoto/service/utils"
 )
 
-// Returns a photo per user followed by the authenticated user
+
 func (rt *_router) getMyStream(w http.ResponseWriter, r *http.Request, ps httprouter.Params, token utils.Token) {
 	authUserId, _ := strconv.ParseInt(token.Value, 10, 64)
+	paramAuthUserId, _ := strconv.ParseInt(ps.ByName("user_id"), 10, 64)
+
+	if authUserId != paramAuthUserId {
+		rt.LoggerAndHttpErrorSender(w, errors.New("can't get a stream impersonating someone else"), utils.HttpError{StatusCode: 403})
+		return
+	}
 
 	photosAmount, err := strconv.ParseInt(r.URL.Query().Get("amount"), 10, 64)
 	if err != nil {
