@@ -11,10 +11,10 @@ type CommentsObject struct {
 }
 
 type PathParams struct {
-	AuthUserId int64
+	AuthUserId   int64
 	TargetUserId int64
-	PhotoId int64
-	Token utils.Token
+	PhotoId      int64
+	Token        utils.Token
 }
 
 type User struct {

@@ -191,7 +191,7 @@ func (db *appdbimpl) DoesEntityBelongsTo(entityId int64, ownerId int64, entityTa
 	return count > 0, dbErr
 }
 
-func (db *appdbimpl) IsUserAlreadyTargeted(userId int64, targetedUserId int64, tableName string) (bool, DbError) {
+func (db *appdbimpl) IsUserAlreadyTargeted(targetingUserId int64, targetedUserId int64, tableName string) (bool, DbError) {
 	var dbErr DbError
 	var query string
 	switch tableName {
@@ -204,7 +204,7 @@ func (db *appdbimpl) IsUserAlreadyTargeted(userId int64, targetedUserId int64, t
 	}
 
 	var targetCount int
-	dbErr.Err = db.c.QueryRow(query, targetedUserId, userId).Scan(&targetCount)
+	dbErr.Err = db.c.QueryRow(query, targetedUserId, targetingUserId).Scan(&targetCount)
 
 	return targetCount > 0, dbErr
 }

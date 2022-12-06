@@ -2,35 +2,12 @@ package api
 
 import (
 	"encoding/json"
-	"errors"
-	"github.com/julienschmidt/httprouter"
 	"net/http"
-	"strconv"
 	"wasaphoto/service/database"
-	"wasaphoto/service/utils"
 )
 
-
-func (rt *_router) getMyStream(w http.ResponseWriter, r *http.Request, ps httprouter.Params, token utils.Token) {
-	authUserId, _ := strconv.ParseInt(token.Value, 10, 64)
-	paramAuthUserId, _ := strconv.ParseInt(ps.ByName("user_id"), 10, 64)
-
-	if authUserId != paramAuthUserId {
-		rt.LoggerAndHttpErrorSender(w, errors.New("can't get a stream impersonating someone else"), utils.HttpError{StatusCode: 403})
-		return
-	}
-
-	photosAmount, err := strconv.ParseInt(r.URL.Query().Get("amount"), 10, 64)
-	if err != nil {
-		rt.LoggerAndHttpErrorSender(w, errors.New("QueryString badly formatted"), utils.HttpError{StatusCode: 400})
-		return
-	}
-
-	photosOffset, err := strconv.ParseInt(r.URL.Query().Get("offset"), 10, 64)
-	if err != nil {
-		rt.LoggerAndHttpErrorSender(w, errors.New("QueryString badly formatted"), utils.HttpError{StatusCode: 400})
-		return
-	}
+func (rt *_router) getMyStream(w http.ResponseWriter, r *http.Request, params map[string]int64) {
+	authUserId, _ := params["token"]
 
 	dbUsers, dbErr := rt.db.GetUsersList(authUserId, database.FollowTable)
 	if dbErr.Err != nil {
@@ -47,7 +24,7 @@ func (rt *_router) getMyStream(w http.ResponseWriter, r *http.Request, ps httpro
 
 	var photos []Photo
 	for _, user := range followedUsers {
-		dbPhotos, dbErr := rt.db.GetUserPhotos(user.Id, photosAmount, photosOffset)
+		dbPhotos, dbErr := rt.db.GetUserPhotos(user.Id, params["amount"], params["offset"])
 		if dbErr.Err != nil {
 			rt.LoggerAndHttpErrorSender(w, dbErr.Err, dbErr.ToHttp())
 			return
