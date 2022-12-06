@@ -17,6 +17,6 @@ func GetAuthenticationToken(authorizationHeader string) Token {
 	return Token{}
 }
 
-func Authorize(token Token, urlId string) bool {
-	return token.Value == urlId
+func Authorize(tokenValue int64, urlId int64) bool {
+	return tokenValue == urlId
 }

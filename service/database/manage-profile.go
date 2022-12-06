@@ -101,6 +101,9 @@ func (db *appdbimpl) GetUserPhotos(id int64, amount int64, offset int64) ([]Phot
 		amount--
 	}
 
+	if photos == nil {
+		dbErr.Err = sql.ErrNoRows
+	}
 	return photos, dbErr
 }
 

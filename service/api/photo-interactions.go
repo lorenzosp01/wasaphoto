@@ -3,26 +3,17 @@ package api
 import (
 	"encoding/json"
 	"errors"
-	"github.com/julienschmidt/httprouter"
 	"net/http"
-	"strconv"
 	"wasaphoto/service/database"
 	"wasaphoto/service/utils"
 )
 
-func (rt *_router) likePhoto(w http.ResponseWriter, r *http.Request, ps httprouter.Params, token utils.Token) {
-	authUserId, _ := strconv.ParseInt(token.Value, 10, 64)
-	paramAuthUserId, _ := strconv.ParseInt(ps.ByName("auth_user_id"), 10, 64)
-	photoOwnerId, _ := strconv.ParseInt(ps.ByName("user_id"), 10, 64)
+func (rt *_router) likePhoto(w http.ResponseWriter, r *http.Request, params map[string]int64) {
+	authUserId := params["token"]
+	userId := params["user_id"]
+	photoId, _ := params["photo_id"]
 
-	if authUserId != paramAuthUserId {
-		rt.LoggerAndHttpErrorSender(w, errors.New("can't put a like impersonating someone else"), utils.HttpError{StatusCode: 403})
-		return
-	}
-
-	photoId, _ := strconv.ParseInt(ps.ByName("photo_id"), 10, 64)
-
-	isBanned, dbErr := rt.db.IsUserAlreadyTargeted(photoOwnerId, authUserId, database.BanTable)
+	isBanned, dbErr := rt.db.IsUserAlreadyTargeted(userId, authUserId, database.BanTable)
 	if isBanned {
 		rt.LoggerAndHttpErrorSender(w, errors.New("can't like a photo of a user that banned you"), utils.HttpError{StatusCode: 403})
 		return
@@ -43,16 +34,16 @@ func (rt *_router) likePhoto(w http.ResponseWriter, r *http.Request, ps httprout
 	_, _ = w.Write([]byte("Photo liked successfully"))
 }
 
-func (rt *_router) unlikePhoto(w http.ResponseWriter, r *http.Request, ps httprouter.Params, token utils.Token) {
-	authUserId, _ := strconv.ParseInt(token.Value, 10, 64)
-	paramAuthUserId, _ := strconv.ParseInt(ps.ByName("auth_user_id"), 10, 64)
+func (rt *_router) unlikePhoto(w http.ResponseWriter, r *http.Request, params map[string]int64) {
+	authUserId := params["token"]
+	userId := params["user_id"]
 
-	if authUserId != paramAuthUserId {
+	if authUserId != userId {
 		rt.LoggerAndHttpErrorSender(w, errors.New("can't delete a like impersonating someone else"), utils.HttpError{StatusCode: 403})
 		return
 	}
 
-	photoId, _ := strconv.ParseInt(ps.ByName("photo_id"), 10, 64)
+	photoId, _ := params["photo_id"]
 
 	dbErr := rt.db.UnlikePhoto(authUserId, photoId)
 	if dbErr.Err != nil {
@@ -64,13 +55,12 @@ func (rt *_router) unlikePhoto(w http.ResponseWriter, r *http.Request, ps httpro
 	_, _ = w.Write([]byte("Photo unliked successfully"))
 }
 
-func (rt *_router) commentPhoto(w http.ResponseWriter, r *http.Request, ps httprouter.Params, token utils.Token) {
-	authUserId, _ := strconv.ParseInt(token.Value, 10, 64)
+func (rt *_router) commentPhoto(w http.ResponseWriter, r *http.Request, params map[string]int64) {
+	authUserId := params["token"]
+	userId := params["user_id"]
+	photoId, _ := params["photo_id"]
 
-	photoId, _ := strconv.ParseInt(ps.ByName("photo_id"), 10, 64)
-	photoOwnerId, _ := strconv.ParseInt(ps.ByName("user_id"), 10, 64)
-
-	isBanned, dbErr := rt.db.IsUserAlreadyTargeted(photoOwnerId, authUserId, database.BanTable)
+	isBanned, dbErr := rt.db.IsUserAlreadyTargeted(userId, authUserId, database.BanTable)
 	if isBanned {
 		rt.LoggerAndHttpErrorSender(w, errors.New("can't comment a photo of a user that banned you"), utils.HttpError{StatusCode: 403})
 		return
@@ -98,12 +88,12 @@ func (rt *_router) commentPhoto(w http.ResponseWriter, r *http.Request, ps httpr
 	_, _ = w.Write([]byte("Comment added succesfully"))
 }
 
-func (rt *_router) getPhotoComments(w http.ResponseWriter, r *http.Request, ps httprouter.Params, token utils.Token) {
-	authUserId, _ := strconv.ParseInt(token.Value, 10, 64)
-	photoId, _ := strconv.ParseInt(ps.ByName("photo_id"), 10, 64)
-	photoOwnerId, _ := strconv.ParseInt(ps.ByName("user_id"), 10, 64)
-	// se owner ha bloccato authUserId, errore
-	isBanned, dbErr := rt.db.IsUserAlreadyTargeted(photoOwnerId, authUserId, database.BanTable)
+func (rt *_router) getPhotoComments(w http.ResponseWriter, r *http.Request, params map[string]int64) {
+	authUserId := params["token"]
+	userId := params["user_id"]
+	photoId, _ := params["photo_id"]
+
+	isBanned, dbErr := rt.db.IsUserAlreadyTargeted(userId, authUserId, database.BanTable)
 	if isBanned {
 		rt.LoggerAndHttpErrorSender(w, errors.New("can't get the comments of a photo of a user that banned you"), utils.HttpError{StatusCode: 403})
 		return
@@ -131,8 +121,8 @@ func (rt *_router) getPhotoComments(w http.ResponseWriter, r *http.Request, ps h
 	_ = json.NewEncoder(w).Encode(commentsObject)
 }
 
-func (rt *_router) deleteComment(w http.ResponseWriter, r *http.Request, ps httprouter.Params, token utils.Token) {
-	commentId, _ := strconv.ParseInt(ps.ByName("comment_id"), 10, 64)
+func (rt *_router) deleteComment(w http.ResponseWriter, r *http.Request, params map[string]int64) {
+	commentId := params["comment_id"]
 
 	dbErr := rt.db.DeleteComment(commentId)
 	if dbErr.Err != nil {
