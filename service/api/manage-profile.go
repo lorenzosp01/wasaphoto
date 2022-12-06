@@ -52,7 +52,6 @@ func (rt *_router) getImage(w http.ResponseWriter, r *http.Request, params map[s
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "image/png")
 	_, _ = w.Write(image)
 }

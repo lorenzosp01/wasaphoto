@@ -18,7 +18,7 @@ const (
 )
 
 // Parses the request and checks if path in the id are valid and entity with that exists
-// todo passare a fn ad una struct con i parametri nel path e del querystring
+// todo gestire meglio gli errori con stringhe spefifiche
 func (rt *_router) wrap(fn httpRouterHandler, dbTables []string, filterParams bool) func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
@@ -30,7 +30,7 @@ func (rt *_router) wrap(fn httpRouterHandler, dbTables []string, filterParams bo
 		for i, table := range dbTables {
 			entitiesId[i], err = strconv.ParseInt(ps[i].Value, 10, 64)
 			if err != nil {
-				rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400})
+				rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400, Message: "Bad request"})
 				return
 			}
 			dbErr = rt.db.EntityExists(entitiesId[i], table)
@@ -64,7 +64,7 @@ func (rt *_router) wrap(fn httpRouterHandler, dbTables []string, filterParams bo
 		authorizationHeader := r.Header.Get("Authorization")
 		token := utils.GetAuthenticationToken(authorizationHeader)
 		if !token.IsValid() {
-			rt.LoggerAndHttpErrorSender(w, errors.New("token invalid"), utils.HttpError{StatusCode: 401})
+			rt.LoggerAndHttpErrorSender(w, errors.New("token invalid"), utils.HttpError{StatusCode: 400})
 			return
 		}
 

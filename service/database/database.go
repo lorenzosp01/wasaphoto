@@ -194,6 +194,7 @@ func (db *appdbimpl) DoesEntityBelongsTo(entityId int64, ownerId int64, entityTa
 func (db *appdbimpl) IsUserAlreadyTargeted(targetingUserId int64, targetedUserId int64, tableName string) (bool, DbError) {
 	var dbErr DbError
 	var query string
+
 	switch tableName {
 	case BanTable:
 		query = fmt.Sprintf("SELECT count(*) FROM %s WHERE banned=? AND banning=?", BanTable)
