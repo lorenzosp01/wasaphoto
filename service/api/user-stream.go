@@ -10,8 +10,8 @@ func (rt *_router) getMyStream(w http.ResponseWriter, r *http.Request, params ma
 	authUserId, _ := params["token"]
 
 	dbUsers, dbErr := rt.db.GetUsersList(authUserId, database.FollowTable)
-	if dbErr.Err != nil {
-		rt.LoggerAndHttpErrorSender(w, dbErr.Err, dbErr.ToHttp())
+	if dbErr.InternalError != nil {
+		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
 	}
 
@@ -25,8 +25,8 @@ func (rt *_router) getMyStream(w http.ResponseWriter, r *http.Request, params ma
 	var photos []Photo
 	for _, user := range followedUsers {
 		dbPhotos, dbErr := rt.db.GetUserPhotos(user.Id, params["amount"], params["offset"])
-		if dbErr.Err != nil {
-			rt.LoggerAndHttpErrorSender(w, dbErr.Err, dbErr.ToHttp())
+		if dbErr.InternalError != nil {
+			rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 			return
 		}
 

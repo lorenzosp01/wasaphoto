@@ -19,7 +19,7 @@ const (
 
 // Parses the request and checks if path in the id are valid and entity with that exists
 // todo gestire meglio gli errori con stringhe spefifiche
-func (rt *_router) wrap(fn httpRouterHandler, dbTables []string, filterParams bool) func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (rt *_router) wrap(fn httpRouterHandler, dbTables []string) func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 		var entitiesId [maxParams]int64
@@ -34,8 +34,8 @@ func (rt *_router) wrap(fn httpRouterHandler, dbTables []string, filterParams bo
 				return
 			}
 			dbErr = rt.db.EntityExists(entitiesId[i], table)
-			if dbErr.Err != nil {
-				rt.LoggerAndHttpErrorSender(w, dbErr.Err, dbErr.ToHttp())
+			if dbErr.InternalError != nil {
+				rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 				return
 			}
 			params[ps[i].Key] = entitiesId[i]
@@ -49,8 +49,8 @@ func (rt *_router) wrap(fn httpRouterHandler, dbTables []string, filterParams bo
 		//		if dbTables[index] != database.LikeTable {
 		//			membershipCheck, dbErr = rt.db.DoesEntityBelongsTo(entitiesId[index], entitiesId[index-1], dbTables[index])
 		//			if !membershipCheck {
-		//				if dbErr.Err != nil {
-		//					rt.LoggerAndHttpErrorSender(w, dbErr.Err, dbErr.ToHttp())
+		//				if dbErr.InternalError != nil {
+		//					rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		//				} else {
 		//					rt.LoggerAndHttpErrorSender(w, errors.New("entity does not belong to the parent"), utils.HttpError{StatusCode: 400})
 		//				}
@@ -70,8 +70,8 @@ func (rt *_router) wrap(fn httpRouterHandler, dbTables []string, filterParams bo
 
 		tokenInt, _ := strconv.ParseInt(token.Value, 10, 64)
 		dbErr = rt.db.EntityExists(tokenInt, database.UserTable)
-		if dbErr.Err != nil {
-			rt.LoggerAndHttpErrorSender(w, dbErr.Err, dbErr.ToHttp())
+		if dbErr.InternalError != nil {
+			rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 			return
 		}
 

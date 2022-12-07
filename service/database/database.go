@@ -99,43 +99,41 @@ type User struct {
 }
 
 type DbError struct {
-	Err error
+	InternalError error
+	CustomMessage string
+	Code          int
 }
 
-var EntityAlreadyExists = errors.New("entity already exists")
-var ForbiddenAction = errors.New("forbidden action")
-var BadInput = errors.New("bad input")
+const (
+	notFound            int = 1
+	forbiddenAction     int = 2
+	badInput            int = 3
+	entityAlreadyExists int = 4
+	genericError        int = 5
+)
+
+var NoRowsDeleted = errors.New("no rows deleted")
 
 func (e DbError) ToHttp() utils.HttpError {
-	switch e.Err {
-	case sql.ErrNoRows:
-		return utils.HttpError{
-			StatusCode: http.StatusNotFound,
-			Message:    "Not found",
-		}
-	case nil:
-		return utils.HttpError{}
-	case BadInput:
-		return utils.HttpError{
-			StatusCode: http.StatusBadRequest,
-			Message:    "Bad parameters",
-		}
-	case EntityAlreadyExists:
-		return utils.HttpError{
-			StatusCode: http.StatusConflict,
-			Message:    "Conflict with the server state",
-		}
-	case ForbiddenAction:
-		return utils.HttpError{
-			StatusCode: http.StatusForbidden,
-			Message:    "Forbidden action",
-		}
-	default:
-		return utils.HttpError{
-			StatusCode: http.StatusInternalServerError,
-			Message:    "Internal server error",
-		}
+	var httpErr utils.HttpError
+	if e.CustomMessage != "" {
+		httpErr.Message = e.CustomMessage
+	} else {
+		httpErr.Message = "Internal error"
 	}
+	switch e.Code {
+	case notFound:
+		httpErr.StatusCode = http.StatusNotFound
+	case forbiddenAction:
+		httpErr.StatusCode = http.StatusForbidden
+	case badInput:
+		httpErr.StatusCode = http.StatusBadRequest
+	case entityAlreadyExists:
+		httpErr.StatusCode = http.StatusConflict
+	case genericError:
+		httpErr.StatusCode = http.StatusInternalServerError
+	}
+	return httpErr
 }
 
 const (
@@ -171,7 +169,19 @@ func (db *appdbimpl) Ping() error {
 
 func (db *appdbimpl) EntityExists(id int64, tableToUse string) DbError {
 	query := fmt.Sprintf("SELECT id FROM %s WHERE id=?", tableToUse)
-	return DbError{db.c.QueryRow(query, id).Scan(&id)}
+	err := db.c.QueryRow(query, id).Scan(&id)
+	var dbErr DbError
+	if err != nil {
+		dbErr.InternalError = err
+		if err == sql.ErrNoRows {
+			dbErr.Code = notFound
+			dbErr.CustomMessage = tableToUse + " not found"
+		} else {
+			dbErr.Code = genericError
+		}
+
+	}
+	return dbErr
 }
 
 func (db *appdbimpl) DoesEntityBelongsTo(entityId int64, ownerId int64, entityTable string) (bool, DbError) {
@@ -186,7 +196,12 @@ func (db *appdbimpl) DoesEntityBelongsTo(entityId int64, ownerId int64, entityTa
 		query = fmt.Sprintf("SELECT count(*) FROM %s WHERE id=? AND owner=?", entityTable)
 	}
 
-	dbErr.Err = db.c.QueryRow(query, entityId, ownerId).Scan(&count)
+	err := db.c.QueryRow(query, entityId, ownerId).Scan(&count)
+	if err != nil {
+		dbErr.InternalError = err
+		dbErr.Code = genericError
+		return false, dbErr
+	}
 
 	return count > 0, dbErr
 }
@@ -201,11 +216,19 @@ func (db *appdbimpl) IsUserAlreadyTargeted(targetingUserId int64, targetedUserId
 	case FollowTable:
 		query = fmt.Sprintf("SELECT count(*) FROM %s WHERE following=? AND follower=?", FollowTable)
 	default:
-		return false, DbError{errors.New("invalid table name")}
+		dbErr.Code = badInput
+		dbErr.CustomMessage = "Invalid parameters"
+		return false, dbErr
 	}
 
 	var targetCount int
-	dbErr.Err = db.c.QueryRow(query, targetedUserId, targetingUserId).Scan(&targetCount)
+	err := db.c.QueryRow(query, targetedUserId, targetingUserId).Scan(&targetCount)
+
+	if err != nil {
+		dbErr.InternalError = err
+		dbErr.Code = genericError
+		return false, dbErr
+	}
 
 	return targetCount > 0, dbErr
 }

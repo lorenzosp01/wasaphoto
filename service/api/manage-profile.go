@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"strconv"
 	"wasaphoto/service/database"
 	"wasaphoto/service/utils"
 )
@@ -19,7 +18,7 @@ func (rt *_router) uploadPhoto(w http.ResponseWriter, r *http.Request, params ma
 	}
 
 	dbErr := rt.db.InsertPhoto(photo, userId)
-	if dbErr.Err != nil {
+	if dbErr.InternalError != nil {
 		rt.LoggerAndHttpErrorSender(w, err, dbErr.ToHttp())
 		return
 	}
@@ -36,19 +35,19 @@ func (rt *_router) getImage(w http.ResponseWriter, r *http.Request, params map[s
 
 	userIsBanned, dbErr := rt.db.IsUserAlreadyTargeted(authUserId, userId, database.BanTable)
 	if userIsBanned {
-		rt.LoggerAndHttpErrorSender(w, dbErr.Err, utils.HttpError{StatusCode: 403})
+		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, utils.HttpError{StatusCode: 403})
 		return
 	} else {
-		if dbErr.Err != nil {
-			rt.LoggerAndHttpErrorSender(w, dbErr.Err, dbErr.ToHttp())
+		if dbErr.InternalError != nil {
+			rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 			return
 		}
 	}
 
 	var image []byte
 	image, dbErr = rt.db.GetImage(photoId)
-	if dbErr.Err != nil {
-		rt.LoggerAndHttpErrorSender(w, dbErr.Err, dbErr.ToHttp())
+	if dbErr.InternalError != nil {
+		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
 	}
 
@@ -72,8 +71,8 @@ func (rt *_router) setMyUsername(w http.ResponseWriter, r *http.Request, params 
 	}
 
 	dbErr := rt.db.ChangeUsername(userId, newUsername.Username)
-	if dbErr.Err != nil {
-		rt.LoggerAndHttpErrorSender(w, dbErr.Err, dbErr.ToHttp())
+	if dbErr.InternalError != nil {
+		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
 	}
 
@@ -92,8 +91,8 @@ func (rt *_router) deletePhoto(w http.ResponseWriter, r *http.Request, params ma
 	var dbErr database.DbError
 
 	dbErr = rt.db.DeletePhoto(photoId)
-	if dbErr.Err != nil {
-		rt.LoggerAndHttpErrorSender(w, dbErr.Err, dbErr.ToHttp())
+	if dbErr.InternalError != nil {
+		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
 	}
 
@@ -106,37 +105,27 @@ func (rt *_router) getUserProfile(w http.ResponseWriter, r *http.Request, params
 	authUserId := params["token"]
 	userId := params["user_id"]
 
-	photosAmount, err := strconv.ParseInt(r.URL.Query().Get("amount"), 10, 64)
-	if err != nil {
-		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400})
-		return
-	}
-
-	photosOffset, err := strconv.ParseInt(r.URL.Query().Get("offset"), 10, 64)
-	if err != nil {
-		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400})
-		return
-	}
-
 	var userIsBanned bool
 	var dbErr database.DbError
 	userIsBanned, dbErr = rt.db.IsUserAlreadyTargeted(authUserId, userId, database.BanTable)
 	if userIsBanned {
-		rt.LoggerAndHttpErrorSender(w, dbErr.Err, utils.HttpError{StatusCode: 403})
+		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, utils.HttpError{StatusCode: 403})
 		return
 	} else {
-		if dbErr.Err != nil {
-			rt.LoggerAndHttpErrorSender(w, dbErr.Err, dbErr.ToHttp())
+		if dbErr.InternalError != nil {
+			rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 			return
 		}
 	}
 
 	var userProfile UserProfile
+	photosAmount := params["amount"]
+	photosOffset := params["offset"]
+
 	up, dbErr := rt.db.GetUserProfile(userId, photosAmount, photosOffset)
 	userProfile.fromDatabase(up)
-
-	if dbErr.Err != nil {
-		rt.LoggerAndHttpErrorSender(w, dbErr.Err, dbErr.ToHttp())
+	if dbErr.InternalError != nil {
+		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
 	}
 

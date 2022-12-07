@@ -13,20 +13,25 @@ func (rt *_router) likePhoto(w http.ResponseWriter, r *http.Request, params map[
 	userId := params["user_id"]
 	photoId, _ := params["photo_id"]
 
+	if authUserId != params["auth_user_id"] {
+		rt.LoggerAndHttpErrorSender(w, errors.New("can't like a photo impersonating someone else"), utils.HttpError{StatusCode: 403})
+		return
+	}
+
 	isBanned, dbErr := rt.db.IsUserAlreadyTargeted(userId, authUserId, database.BanTable)
 	if isBanned {
 		rt.LoggerAndHttpErrorSender(w, errors.New("can't like a photo of a user that banned you"), utils.HttpError{StatusCode: 403})
 		return
 	} else {
-		if dbErr.Err != nil {
-			rt.LoggerAndHttpErrorSender(w, dbErr.Err, dbErr.ToHttp())
+		if dbErr.InternalError != nil {
+			rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 			return
 		}
 	}
 
 	dbErr = rt.db.LikePhoto(authUserId, photoId)
-	if dbErr.Err != nil {
-		rt.LoggerAndHttpErrorSender(w, dbErr.Err, dbErr.ToHttp())
+	if dbErr.InternalError != nil {
+		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
 	}
 
@@ -36,18 +41,17 @@ func (rt *_router) likePhoto(w http.ResponseWriter, r *http.Request, params map[
 
 func (rt *_router) unlikePhoto(w http.ResponseWriter, r *http.Request, params map[string]int64) {
 	authUserId := params["token"]
-	userId := params["user_id"]
 
-	if authUserId != userId {
-		rt.LoggerAndHttpErrorSender(w, errors.New("can't delete a like impersonating someone else"), utils.HttpError{StatusCode: 403})
+	if authUserId != params["auth_user_id"] {
+		rt.LoggerAndHttpErrorSender(w, errors.New("can't like a photo impersonating someone else"), utils.HttpError{StatusCode: 403})
 		return
 	}
 
 	photoId, _ := params["photo_id"]
 
 	dbErr := rt.db.UnlikePhoto(authUserId, photoId)
-	if dbErr.Err != nil {
-		rt.LoggerAndHttpErrorSender(w, dbErr.Err, dbErr.ToHttp())
+	if dbErr.InternalError != nil {
+		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
 	}
 
@@ -65,8 +69,8 @@ func (rt *_router) commentPhoto(w http.ResponseWriter, r *http.Request, params m
 		rt.LoggerAndHttpErrorSender(w, errors.New("can't comment a photo of a user that banned you"), utils.HttpError{StatusCode: 403})
 		return
 	} else {
-		if dbErr.Err != nil {
-			rt.LoggerAndHttpErrorSender(w, dbErr.Err, dbErr.ToHttp())
+		if dbErr.InternalError != nil {
+			rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 			return
 		}
 	}
@@ -79,8 +83,8 @@ func (rt *_router) commentPhoto(w http.ResponseWriter, r *http.Request, params m
 	}
 
 	dbErr = rt.db.CommentPhoto(authUserId, photoId, comment.Content)
-	if dbErr.Err != nil {
-		rt.LoggerAndHttpErrorSender(w, dbErr.Err, dbErr.ToHttp())
+	if dbErr.InternalError != nil {
+		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
 	}
 
@@ -98,16 +102,16 @@ func (rt *_router) getPhotoComments(w http.ResponseWriter, r *http.Request, para
 		rt.LoggerAndHttpErrorSender(w, errors.New("can't get the comments of a photo of a user that banned you"), utils.HttpError{StatusCode: 403})
 		return
 	} else {
-		if dbErr.Err != nil {
-			rt.LoggerAndHttpErrorSender(w, dbErr.Err, dbErr.ToHttp())
+		if dbErr.InternalError != nil {
+			rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 			return
 		}
 	}
 
 	var commentsObject CommentsObject
 	dbComments, dbErr := rt.db.GetPhotoComments(photoId)
-	if dbErr.Err != nil {
-		rt.LoggerAndHttpErrorSender(w, dbErr.Err, dbErr.ToHttp())
+	if dbErr.InternalError != nil {
+		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
 	}
 
@@ -125,8 +129,8 @@ func (rt *_router) deleteComment(w http.ResponseWriter, r *http.Request, params 
 	commentId := params["comment_id"]
 
 	dbErr := rt.db.DeleteComment(commentId)
-	if dbErr.Err != nil {
-		rt.LoggerAndHttpErrorSender(w, dbErr.Err, dbErr.ToHttp())
+	if dbErr.InternalError != nil {
+		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
 	}
 

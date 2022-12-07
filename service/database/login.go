@@ -12,20 +12,19 @@ func (db *appdbimpl) GetUserId(username string) (int64, DbError) {
 	var id int64
 	// Get user identifier if a user with the given username exists
 	err := db.c.QueryRow(query, username).Scan(&id)
+	var dbErr DbError
 
 	if errors.Is(err, sql.ErrNoRows) {
 		// If no user has been found, create a new one
 		id, err = db.createUser(username)
 		if err != nil {
-			return 0, DbError{
-				Err: err,
-			}
+			dbErr.InternalError = err
+			dbErr.Code = genericError
+			return id, dbErr
 		}
 	}
 
-	return id, DbError{
-		Err: err,
-	}
+	return id, dbErr
 }
 
 // createUser creates a new user with the given username and returns the user id.

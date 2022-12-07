@@ -32,8 +32,8 @@ func (rt *_router) targetUser(w http.ResponseWriter, r *http.Request, params map
 	}
 
 	dbErr := rt.db.TargetUser(authUserId, targetedUserId, entityTable)
-	if dbErr.Err != nil {
-		rt.LoggerAndHttpErrorSender(w, dbErr.Err, dbErr.ToHttp())
+	if dbErr.InternalError != nil {
+		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
 	}
 
@@ -65,8 +65,8 @@ func (rt *_router) untargetUser(w http.ResponseWriter, r *http.Request, params m
 	}
 
 	dbErr := rt.db.UntargetUser(authUserId, targetedUserId, entityTable)
-	if dbErr.Err != nil {
-		rt.LoggerAndHttpErrorSender(w, dbErr.Err, dbErr.ToHttp())
+	if dbErr.InternalError != nil {
+		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
 	}
 
@@ -92,8 +92,8 @@ func (rt *_router) getUsersList(w http.ResponseWriter, r *http.Request, params m
 	userId := params["user_id"]
 
 	dbUsers, dbErr := rt.db.GetUsersList(userId, entityTable)
-	if dbErr.Err != nil {
-		rt.LoggerAndHttpErrorSender(w, dbErr.Err, dbErr.ToHttp())
+	if dbErr.InternalError != nil {
+		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
 	}
 
