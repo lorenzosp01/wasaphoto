@@ -1,6 +1,7 @@
 package database
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/mattn/go-sqlite3"
@@ -22,7 +23,7 @@ func (db *appdbimpl) TargetUser(authUserId int64, userId int64, tableName string
 
 	_, err := db.c.Exec(query, authUserId, userId)
 	if err != nil {
-		if err.(sqlite3.Error).Code == sqlite3.ErrConstraint {
+		if err.(sqlite3.Error).ExtendedCode == sqlite3.ErrConstraintPrimaryKey {
 			dbErr.InternalError = err
 			dbErr.Code = entityAlreadyExists
 			dbErr.CustomMessage = "user already targeted by a " + tableName
@@ -81,7 +82,13 @@ func (db *appdbimpl) GetUsersList(authUserId int64, tableName string) ([]User, D
 	}
 
 	var users []User
-
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+			dbErr.Code = genericError
+			dbErr.InternalError = err
+		}
+	}(rows)
 	for rows.Next() {
 		var user User
 		err = rows.Scan(&user.Id)

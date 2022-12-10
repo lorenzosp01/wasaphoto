@@ -18,7 +18,6 @@ const (
 )
 
 // Parses the request and checks if path in the id are valid and entity with that exists
-// todo gestire meglio gli errori con stringhe spefifiche
 func (rt *_router) wrap(fn httpRouterHandler, dbTables []string) func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
@@ -40,26 +39,6 @@ func (rt *_router) wrap(fn httpRouterHandler, dbTables []string) func(w http.Res
 			}
 			params[ps[i].Key] = entitiesId[i]
 		}
-
-		//todo da rivedere siccome adesso c'è params, forse meglio modificare le funzione del db
-		//if filterParams {
-		//	index := 1
-		//	var membershipCheck bool
-		//	for index < len(ps) {
-		//		if dbTables[index] != database.LikeTable {
-		//			membershipCheck, dbErr = rt.db.DoesEntityBelongsTo(entitiesId[index], entitiesId[index-1], dbTables[index])
-		//			if !membershipCheck {
-		//				if dbErr.InternalError != nil {
-		//					rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
-		//				} else {
-		//					rt.LoggerAndHttpErrorSender(w, errors.New("entity does not belong to the parent"), utils.HttpError{StatusCode: 400})
-		//				}
-		//				return
-		//			}
-		//			index++
-		//		}
-		//	}
-		//}
 
 		authorizationHeader := r.Header.Get("Authorization")
 		token := utils.GetAuthenticationToken(authorizationHeader)
@@ -95,7 +74,7 @@ func (rt *_router) authWrap(fn httpRouterHandler) func(w http.ResponseWriter, r 
 		isAuthorized := utils.Authorize(params["token"], params["user_id"])
 
 		if !isAuthorized {
-			rt.LoggerAndHttpErrorSender(w, errors.New("user not authorized"), utils.HttpError{StatusCode: 401})
+			rt.LoggerAndHttpErrorSender(w, errors.New("user not authorized"), utils.HttpError{StatusCode: 401, Message: "User not authorized"})
 			return
 		}
 

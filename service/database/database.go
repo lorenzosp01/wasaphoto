@@ -42,11 +42,11 @@ import (
 type AppDatabase interface {
 	Ping() error
 	GetUserId(string) (int64, DbError)
-	GetImage(int64) ([]byte, DbError)
+	GetImage(int64, int64) ([]byte, DbError)
 	InsertPhoto([]byte, int64) DbError
 	EntityExists(int64, string) DbError
 	ChangeUsername(int64, string) DbError
-	DeletePhoto(int64) DbError
+	DeletePhoto(int64, int64) DbError
 	GetUserProfile(int64, int64, int64) (UserProfile, DbError)
 	GetUserPhotos(int64, int64, int64) ([]Photo, DbError)
 	getProfileCounters(int64) (ProfileCounters, DbError)
@@ -54,12 +54,12 @@ type AppDatabase interface {
 	IsUserAlreadyTargeted(int64, int64, string) (bool, DbError)
 	UntargetUser(int64, int64, string) DbError
 	GetUsersList(int64, string) ([]User, DbError)
-	LikePhoto(int64, int64) DbError
-	UnlikePhoto(int64, int64) DbError
-	CommentPhoto(int64, int64, string) DbError
-	GetPhotoComments(int64) ([]Comment, DbError)
-	DeleteComment(int64) DbError
-	DoesEntityBelongsTo(int64, int64, string) (bool, DbError)
+	LikePhoto(int64, int64, int64) DbError
+	UnlikePhoto(int64, int64, int64) DbError
+	CommentPhoto(int64, int64, int64, string) DbError
+	doesPhotoBelongToUser(int64, int64) bool
+	GetPhotoComments(int64, int64) ([]Comment, DbError)
+	DeleteComment(int64, int64, int64, int64) DbError
 }
 
 type UserProfile struct {
@@ -110,6 +110,7 @@ const (
 	badInput            int = 3
 	entityAlreadyExists int = 4
 	genericError        int = 5
+	genericConfilct     int = 6
 )
 
 var NoRowsDeleted = errors.New("no rows deleted")
@@ -128,7 +129,7 @@ func (e DbError) ToHttp() utils.HttpError {
 		httpErr.StatusCode = http.StatusForbidden
 	case badInput:
 		httpErr.StatusCode = http.StatusBadRequest
-	case entityAlreadyExists:
+	case entityAlreadyExists, genericConfilct:
 		httpErr.StatusCode = http.StatusConflict
 	case genericError:
 		httpErr.StatusCode = http.StatusInternalServerError
@@ -184,28 +185,6 @@ func (db *appdbimpl) EntityExists(id int64, tableToUse string) DbError {
 	return dbErr
 }
 
-func (db *appdbimpl) DoesEntityBelongsTo(entityId int64, ownerId int64, entityTable string) (bool, DbError) {
-	var dbErr DbError
-	var count int64
-	var query string
-
-	switch entityTable {
-	case CommentTable:
-		query = fmt.Sprintf("SELECT count(*) FROM %s WHERE id=? AND photo=?", entityTable)
-	default:
-		query = fmt.Sprintf("SELECT count(*) FROM %s WHERE id=? AND owner=?", entityTable)
-	}
-
-	err := db.c.QueryRow(query, entityId, ownerId).Scan(&count)
-	if err != nil {
-		dbErr.InternalError = err
-		dbErr.Code = genericError
-		return false, dbErr
-	}
-
-	return count > 0, dbErr
-}
-
 func (db *appdbimpl) IsUserAlreadyTargeted(targetingUserId int64, targetedUserId int64, tableName string) (bool, DbError) {
 	var dbErr DbError
 	var query string
@@ -228,6 +207,11 @@ func (db *appdbimpl) IsUserAlreadyTargeted(targetingUserId int64, targetedUserId
 		dbErr.InternalError = err
 		dbErr.Code = genericError
 		return false, dbErr
+	}
+
+	if targetCount > 0 {
+		dbErr.InternalError = errors.New("User is targeted")
+		dbErr.Code = forbiddenAction
 	}
 
 	return targetCount > 0, dbErr

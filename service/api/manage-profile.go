@@ -35,7 +35,8 @@ func (rt *_router) getImage(w http.ResponseWriter, r *http.Request, params map[s
 
 	userIsBanned, dbErr := rt.db.IsUserAlreadyTargeted(authUserId, userId, database.BanTable)
 	if userIsBanned {
-		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, utils.HttpError{StatusCode: 403})
+		dbErr.CustomMessage = "You are banned"
+		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
 	} else {
 		if dbErr.InternalError != nil {
@@ -45,7 +46,7 @@ func (rt *_router) getImage(w http.ResponseWriter, r *http.Request, params map[s
 	}
 
 	var image []byte
-	image, dbErr = rt.db.GetImage(photoId)
+	image, dbErr = rt.db.GetImage(photoId, userId)
 	if dbErr.InternalError != nil {
 		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
@@ -87,10 +88,11 @@ func (rt *_router) setMyUsername(w http.ResponseWriter, r *http.Request, params 
 
 func (rt *_router) deletePhoto(w http.ResponseWriter, r *http.Request, params map[string]int64) {
 	photoId := params["photo_id"]
+	userId := params["user_id"]
 
 	var dbErr database.DbError
 
-	dbErr = rt.db.DeletePhoto(photoId)
+	dbErr = rt.db.DeletePhoto(photoId, userId)
 	if dbErr.InternalError != nil {
 		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
@@ -108,8 +110,10 @@ func (rt *_router) getUserProfile(w http.ResponseWriter, r *http.Request, params
 	var userIsBanned bool
 	var dbErr database.DbError
 	userIsBanned, dbErr = rt.db.IsUserAlreadyTargeted(authUserId, userId, database.BanTable)
+
 	if userIsBanned {
-		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, utils.HttpError{StatusCode: 403})
+		dbErr.CustomMessage = "You are banned"
+		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
 	} else {
 		if dbErr.InternalError != nil {

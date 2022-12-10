@@ -20,15 +20,26 @@ func (rt *_router) followUser(w http.ResponseWriter, r *http.Request, params map
 	rt.targetUser(w, r, params, database.FollowTable)
 }
 
-// todo per il follow stare attento a controllare che l'utente non possa seguire un utente che lo ha bannato e vicersa
 func (rt *_router) targetUser(w http.ResponseWriter, r *http.Request, params map[string]int64, entityTable string) {
 
 	authUserId := params["token"]
 	targetedUserId := params["targeted_user_id"]
 
-	if authUserId == targetedUserId {
-		rt.LoggerAndHttpErrorSender(w, errors.New("can't target a user impersonating someone else"), utils.HttpError{StatusCode: 403})
+	if targetedUserId == authUserId {
+		rt.LoggerAndHttpErrorSender(w, errors.New("a user can't target himself"), utils.HttpError{StatusCode: 403, Message: "You can't target yourself"})
 		return
+	}
+
+	if entityTable == database.FollowTable {
+		isTargeted, dbErr := rt.db.IsUserAlreadyTargeted(targetedUserId, authUserId, database.BanTable)
+		if dbErr.InternalError != nil {
+			if isTargeted {
+				dbErr.CustomMessage = "you cannot follow a user that banned you"
+			}
+			rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
+			return
+		}
+
 	}
 
 	dbErr := rt.db.TargetUser(authUserId, targetedUserId, entityTable)
@@ -60,8 +71,19 @@ func (rt *_router) untargetUser(w http.ResponseWriter, r *http.Request, params m
 	targetedUserId := params["targeted_user_id"]
 
 	if targetedUserId == authUserId {
-		rt.LoggerAndHttpErrorSender(w, errors.New("a user can't untarget himself"), utils.HttpError{StatusCode: 403})
+		rt.LoggerAndHttpErrorSender(w, errors.New("a user can't untarget himself"), utils.HttpError{StatusCode: 403, Message: "You can't untarget yourself"})
 		return
+	}
+
+	if entityTable == database.FollowTable {
+		isTargeted, dbErr := rt.db.IsUserAlreadyTargeted(targetedUserId, authUserId, database.BanTable)
+		if dbErr.InternalError != nil {
+			if isTargeted {
+				dbErr.CustomMessage = "you cannot unfollow a user that banned you"
+			}
+			rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
+			return
+		}
 	}
 
 	dbErr := rt.db.UntargetUser(authUserId, targetedUserId, entityTable)

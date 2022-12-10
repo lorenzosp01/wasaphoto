@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 )
 
@@ -19,23 +20,24 @@ func (db *appdbimpl) InsertPhoto(image []byte, ownerId int64) DbError {
 	return dbErr
 }
 
-func (db *appdbimpl) GetImage(photoId int64) ([]byte, DbError) {
+// Photo has to belong to the user in path
+func (db *appdbimpl) GetImage(photo int64, user int64) ([]byte, DbError) {
 	var image []byte
-	query := fmt.Sprintf("SELECT image %s FROM Photo WHERE id=?", PhotoTable)
-	err := db.c.QueryRow(query, photoId).Scan(&image)
+	query := fmt.Sprintf("SELECT image FROM %s WHERE id=? AND owner=?", PhotoTable)
+	err := db.c.QueryRow(query, photo, user).Scan(&image)
 	var dbErr DbError
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			dbErr.CustomMessage = "no image found"
-			dbErr.Code = notFound
+			dbErr.CustomMessage = "that image doesn't belongs to the user in path"
+			dbErr.Code = genericConfilct
 		} else {
 			dbErr.Code = genericError
 		}
 		dbErr.InternalError = err
 	}
 
-	return image, DbError{}
+	return image, dbErr
 }
 
 func (db *appdbimpl) ChangeUsername(id int64, newUsername string) DbError {
@@ -51,14 +53,22 @@ func (db *appdbimpl) ChangeUsername(id int64, newUsername string) DbError {
 	return dbErr
 }
 
-func (db *appdbimpl) DeletePhoto(id int64) DbError {
-	query := fmt.Sprintf("DELETE FROM %s WHERE ID=?", PhotoTable)
-	_, err := db.c.Exec(query, id)
+// Photo has to belong to the authenticated user
+func (db *appdbimpl) DeletePhoto(photo int64, user int64) DbError {
 	var dbErr DbError
-	if err != nil {
-		dbErr.Code = genericError
-		dbErr.InternalError = err
+	if db.doesPhotoBelongToUser(photo, user) {
+		query := fmt.Sprintf("DELETE FROM %s WHERE id=? AND owner=?", PhotoTable)
+		_, err := db.c.Exec(query, photo, user)
+		if err != nil {
+			dbErr.Code = genericError
+			dbErr.InternalError = err
+		}
+	} else {
+		dbErr.Code = genericConfilct
+		dbErr.CustomMessage = "That photo doesn't belongs to the authenticated user"
+		dbErr.InternalError = errors.New("Photo and photo owner don't match")
 	}
+
 	return dbErr
 }
 
@@ -112,8 +122,16 @@ func (db *appdbimpl) GetUserPhotos(id int64, amount int64, offset int64) ([]Phot
 
 	var photos []Photo
 	var photo Photo
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+			dbErr.Code = genericError
+			dbErr.InternalError = err
 
+		}
+	}(rows)
 	for rows.Next() {
+
 		photo.Owner = id
 		err = rows.Scan(&photo.Id, &photo.UploadedAt)
 		if err != nil {
