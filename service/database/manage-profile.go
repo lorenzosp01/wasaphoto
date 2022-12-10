@@ -28,7 +28,7 @@ func (db *appdbimpl) GetImage(photo int64, user int64) ([]byte, DbError) {
 	var dbErr DbError
 
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			dbErr.CustomMessage = "that image doesn't belongs to the user in path"
 			dbErr.Code = genericConfilct
 		} else {
@@ -81,7 +81,7 @@ func (db *appdbimpl) GetUserProfile(id int64, photosAmount int64, photosOffset i
 	err := db.c.QueryRow(query, id).Scan(&up.UserInfo.Username)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			dbErr.Code = notFound
 			dbErr.CustomMessage = "User not found"
 		} else {
@@ -109,7 +109,7 @@ func (db *appdbimpl) GetUserPhotos(id int64, amount int64, offset int64) ([]Phot
 	rows, err := db.c.Query(query, id, amount, offset)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			dbErr.Code = forbiddenAction
 			dbErr.CustomMessage = "That user doesn't owns that photo"
 		} else {
@@ -135,7 +135,7 @@ func (db *appdbimpl) GetUserPhotos(id int64, amount int64, offset int64) ([]Phot
 		photo.Owner = id
 		err = rows.Scan(&photo.Id, &photo.UploadedAt)
 		if err != nil {
-			if err == sql.ErrNoRows {
+			if errors.Is(err, sql.ErrNoRows) {
 				dbErr.Code = notFound
 				dbErr.CustomMessage = "User not found"
 			} else {

@@ -31,7 +31,7 @@ func (rt *_router) targetUser(w http.ResponseWriter, r *http.Request, params map
 	}
 
 	if entityTable == database.FollowTable {
-		isTargeted, dbErr := rt.db.IsUserAlreadyTargeted(targetedUserId, authUserId, database.BanTable)
+		isTargeted, dbErr := rt.db.IsUserTargeted(targetedUserId, authUserId, database.BanTable)
 		if dbErr.InternalError != nil {
 			if isTargeted {
 				dbErr.CustomMessage = "you cannot follow a user that banned you"
@@ -76,7 +76,7 @@ func (rt *_router) untargetUser(w http.ResponseWriter, r *http.Request, params m
 	}
 
 	if entityTable == database.FollowTable {
-		isTargeted, dbErr := rt.db.IsUserAlreadyTargeted(targetedUserId, authUserId, database.BanTable)
+		isTargeted, dbErr := rt.db.IsUserTargeted(targetedUserId, authUserId, database.BanTable)
 		if dbErr.InternalError != nil {
 			if isTargeted {
 				dbErr.CustomMessage = "you cannot unfollow a user that banned you"

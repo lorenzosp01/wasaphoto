@@ -26,12 +26,21 @@ func (db *appdbimpl) LikePhoto(authUser int64, photo int64, photoOwner int64) Db
 		_, err := db.c.Exec(query, authUser, photo)
 
 		if err != nil {
-			if err.(sqlite3.Error).ExtendedCode == sqlite3.ErrConstraintPrimaryKey {
-				dbErr.Code = entityAlreadyExists
-				dbErr.CustomMessage = "user already put like on this photo"
+			if errors.As(err, &sqlite3.Error{}) {
+				specificErr, ok := err.(sqlite3.Error)
+				if ok {
+					if errors.Is(specificErr.ExtendedCode, sqlite3.ErrConstraintPrimaryKey) {
+						dbErr.InternalError = err
+						dbErr.Code = entityAlreadyExists
+						dbErr.CustomMessage = "User already liked that photo"
+					}
+				} else {
+					dbErr.InternalError = errors.New("error casting error to sqlite3.Error")
+					dbErr.Code = genericError
+				}
 			}
-			dbErr.InternalError = err
 		}
+
 	} else {
 		dbErr.Code = genericConfilct
 		dbErr.CustomMessage = "Photo doesn't belong to that user"
@@ -56,7 +65,7 @@ func (db *appdbimpl) UnlikePhoto(authUser int64, photo int64, photoOwner int64) 
 			if affected == 0 {
 				dbErr.Code = notFound
 				dbErr.CustomMessage = "There is no like from that user in that photo"
-				dbErr.InternalError = NoRowsDeleted
+				dbErr.InternalError = ErrNoRowsDeleted
 			}
 		}
 	} else {
@@ -103,7 +112,7 @@ func (db *appdbimpl) DeleteComment(photo int64, photoOwner int64, commentOwner i
 			if affected == 0 {
 				dbErr.Code = genericConfilct
 				dbErr.CustomMessage = "Comment doesn't belong to that photo or that user isn't the owner of the comment"
-				dbErr.InternalError = NoRowsDeleted
+				dbErr.InternalError = ErrNoRowsDeleted
 			}
 		}
 	} else {

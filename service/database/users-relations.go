@@ -23,10 +23,18 @@ func (db *appdbimpl) TargetUser(authUserId int64, userId int64, tableName string
 
 	_, err := db.c.Exec(query, authUserId, userId)
 	if err != nil {
-		if err.(sqlite3.Error).ExtendedCode == sqlite3.ErrConstraintPrimaryKey {
-			dbErr.InternalError = err
-			dbErr.Code = entityAlreadyExists
-			dbErr.CustomMessage = "user already targeted by a " + tableName
+		if errors.As(err, &sqlite3.Error{}) {
+			specificErr, ok := err.(sqlite3.Error)
+			if ok {
+				if errors.Is(specificErr.ExtendedCode, sqlite3.ErrConstraintPrimaryKey) {
+					dbErr.InternalError = err
+					dbErr.Code = entityAlreadyExists
+					dbErr.CustomMessage = "user already targeted by a " + tableName
+				}
+			} else {
+				dbErr.InternalError = errors.New("error casting error to sqlite3.Error")
+				dbErr.Code = genericError
+			}
 		}
 	}
 
@@ -52,7 +60,7 @@ func (db *appdbimpl) UntargetUser(authUserId int64, userId int64, tableName stri
 		if affected == 0 {
 			dbErr.Code = notFound
 			dbErr.CustomMessage = tableName + " not found"
-			dbErr.InternalError = NoRowsDeleted
+			dbErr.InternalError = ErrNoRowsDeleted
 		}
 	} else {
 		dbErr.InternalError = err

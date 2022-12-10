@@ -51,7 +51,7 @@ type AppDatabase interface {
 	GetUserPhotos(int64, int64, int64) ([]Photo, DbError)
 	getProfileCounters(int64) (ProfileCounters, DbError)
 	TargetUser(int64, int64, string) DbError
-	IsUserAlreadyTargeted(int64, int64, string) (bool, DbError)
+	IsUserTargeted(int64, int64, string) (bool, DbError)
 	UntargetUser(int64, int64, string) DbError
 	GetUsersList(int64, string) ([]User, DbError)
 	LikePhoto(int64, int64, int64) DbError
@@ -113,7 +113,7 @@ const (
 	genericConfilct     int = 6
 )
 
-var NoRowsDeleted = errors.New("no rows deleted")
+var ErrNoRowsDeleted = errors.New("no rows deleted")
 
 func (e DbError) ToHttp() utils.HttpError {
 	var httpErr utils.HttpError
@@ -174,7 +174,7 @@ func (db *appdbimpl) EntityExists(id int64, tableToUse string) DbError {
 	var dbErr DbError
 	if err != nil {
 		dbErr.InternalError = err
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			dbErr.Code = notFound
 			dbErr.CustomMessage = tableToUse + " not found"
 		} else {
@@ -185,7 +185,7 @@ func (db *appdbimpl) EntityExists(id int64, tableToUse string) DbError {
 	return dbErr
 }
 
-func (db *appdbimpl) IsUserAlreadyTargeted(targetingUserId int64, targetedUserId int64, tableName string) (bool, DbError) {
+func (db *appdbimpl) IsUserTargeted(targetingUserId int64, targetedUserId int64, tableName string) (bool, DbError) {
 	var dbErr DbError
 	var query string
 

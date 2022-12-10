@@ -7,7 +7,7 @@ import (
 )
 
 func (rt *_router) getMyStream(w http.ResponseWriter, r *http.Request, params map[string]int64) {
-	authUserId, _ := params["token"]
+	authUserId := params["token"]
 
 	dbUsers, dbErr := rt.db.GetUsersList(authUserId, database.FollowTable)
 	if dbErr.InternalError != nil {

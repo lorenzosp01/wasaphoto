@@ -9,7 +9,7 @@ import (
 )
 
 func (rt *_router) uploadPhoto(w http.ResponseWriter, r *http.Request, params map[string]int64) {
-	userId, _ := params["token"]
+	userId := params["token"]
 
 	photo, err := io.ReadAll(r.Body)
 	if err != nil || len(photo) == 0 {
@@ -33,7 +33,7 @@ func (rt *_router) getImage(w http.ResponseWriter, r *http.Request, params map[s
 	authUserId := params["token"]
 	userId := params["user_id"]
 
-	userIsBanned, dbErr := rt.db.IsUserAlreadyTargeted(authUserId, userId, database.BanTable)
+	userIsBanned, dbErr := rt.db.IsUserTargeted(authUserId, userId, database.BanTable)
 	if userIsBanned {
 		dbErr.CustomMessage = "You are banned"
 		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
@@ -109,7 +109,7 @@ func (rt *_router) getUserProfile(w http.ResponseWriter, r *http.Request, params
 
 	var userIsBanned bool
 	var dbErr database.DbError
-	userIsBanned, dbErr = rt.db.IsUserAlreadyTargeted(authUserId, userId, database.BanTable)
+	userIsBanned, dbErr = rt.db.IsUserTargeted(authUserId, userId, database.BanTable)
 
 	if userIsBanned {
 		dbErr.CustomMessage = "You are banned"
