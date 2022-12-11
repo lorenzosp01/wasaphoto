@@ -43,7 +43,7 @@ func (rt *_router) wrap(fn httpRouterHandler, dbTables []string) func(w http.Res
 		authorizationHeader := r.Header.Get("Authorization")
 		token := utils.GetAuthenticationToken(authorizationHeader)
 		if !token.IsValid() {
-			rt.LoggerAndHttpErrorSender(w, errors.New("token invalid"), utils.HttpError{StatusCode: 400})
+			rt.LoggerAndHttpErrorSender(w, errors.New("token invalid"), utils.HttpError{StatusCode: 400, Message: "Token is not valid"})
 			return
 		}
 

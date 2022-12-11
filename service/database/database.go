@@ -76,14 +76,14 @@ type ProfileCounters struct {
 
 type Comment struct {
 	Id        int64
-	Owner     int64
+	Owner     User
 	Content   string
 	CreatedAt string
 }
 
 type Photo struct {
 	Id         int64
-	Owner      int64
+	Owner      User
 	UploadedAt string
 	PhotoInfo  PhotoCounters
 }

@@ -34,21 +34,21 @@ type UserStream struct {
 
 type Photo struct {
 	Id         int64         `json:"id"`
-	Owner      int64         `json:"owner"`
+	Owner      User          `json:"owner"`
 	UploadedAt string        `json:"uploadedAt"`
 	PhotoInfo  PhotoCounters `json:"photoInfo"`
 }
 
 type Comment struct {
 	Id        int64  `json:"id"`
-	Owner     int64  `json:"owner"`
+	Owner     User   `json:"owner"`
 	Content   string `json:"content"`
 	CreatedAt string `json:"uploadedAt"`
 }
 
 func (c *Comment) fromDatabase(dbComment database.Comment) {
 	c.Id = dbComment.Id
-	c.Owner = dbComment.Owner
+	c.Owner.fromDatabase(dbComment.Owner)
 	c.Content = dbComment.Content
 	c.CreatedAt = dbComment.CreatedAt
 }
@@ -99,7 +99,7 @@ func (up *UserProfile) fromDatabase(upDb database.UserProfile) {
 
 func (p *Photo) fromDatabase(dbPhoto database.Photo) {
 	p.Id = dbPhoto.Id
-	p.Owner = dbPhoto.Owner
+	p.Owner.fromDatabase(dbPhoto.Owner)
 	p.UploadedAt = dbPhoto.UploadedAt
 	p.PhotoInfo.LikesCounter = dbPhoto.PhotoInfo.LikesCounter
 	p.PhotoInfo.CommentsCounter = dbPhoto.PhotoInfo.CommentsCounter

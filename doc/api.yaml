@@ -126,7 +126,7 @@ components:
         example: 10
       name: amount
       in: query
-      required: false
+      required: true
       description: Amount of photos to return
     photoOffset:
       schema:

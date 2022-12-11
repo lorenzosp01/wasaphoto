@@ -129,7 +129,10 @@ func (db *appdbimpl) GetPhotoComments(photo int64, photoOwner int64) ([]Comment,
 	var comments []Comment
 
 	if db.doesPhotoBelongToUser(photo, photoOwner) {
-		query := fmt.Sprintf("SELECT id, owner, content, created_at FROM %s WHERE photo=?", CommentTable)
+		joinParam := UserTable + ".id"
+		userColumn := "name"
+		commentColumn := CommentTable + ".id"
+		query := fmt.Sprintf("SELECT %s, owner, %s, content, created_at FROM %s, %s WHERE owner=%s AND photo=?", commentColumn, userColumn, CommentTable, UserTable, joinParam)
 		rows, err := db.c.Query(query, photo)
 
 		if err != nil {
@@ -146,7 +149,7 @@ func (db *appdbimpl) GetPhotoComments(photo int64, photoOwner int64) ([]Comment,
 			}(rows)
 			for rows.Next() {
 				var comment Comment
-				err := rows.Scan(&comment.Id, &comment.Owner, &comment.Content, &comment.CreatedAt)
+				err := rows.Scan(&comment.Id, &comment.Owner.Id, &comment.Owner.Username, &comment.Content, &comment.CreatedAt)
 				if err != nil {
 					dbErr.Code = genericError
 					dbErr.InternalError = err

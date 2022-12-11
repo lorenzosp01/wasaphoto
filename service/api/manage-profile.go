@@ -62,12 +62,12 @@ func (rt *_router) setMyUsername(w http.ResponseWriter, r *http.Request, params 
 	var newUsername Username
 	err := json.NewDecoder(r.Body).Decode(&newUsername)
 	if err != nil {
-		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400})
+		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400, Message: "Invalid request body"})
 		return
 	}
 
 	if !newUsername.IsValid() {
-		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400})
+		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400, Message: "Invalid username"})
 		return
 	}
 
@@ -109,7 +109,7 @@ func (rt *_router) getUserProfile(w http.ResponseWriter, r *http.Request, params
 
 	var userIsBanned bool
 	var dbErr database.DbError
-	userIsBanned, dbErr = rt.db.IsUserTargeted(authUserId, userId, database.BanTable)
+	userIsBanned, dbErr = rt.db.IsUserTargeted(userId, authUserId, database.BanTable)
 
 	if userIsBanned {
 		dbErr.CustomMessage = "You are banned"

@@ -105,7 +105,12 @@ func (db *appdbimpl) GetUserProfile(id int64, photosAmount int64, photosOffset i
 func (db *appdbimpl) GetUserPhotos(id int64, amount int64, offset int64) ([]Photo, DbError) {
 	// Per ogni foto
 	var dbErr DbError
-	query := fmt.Sprintf("SELECT id, uploaded_at FROM %s WHERE owner=? LIMIT ? OFFSET ?", PhotoTable)
+	joinParam := UserTable + ".id"
+	userColumn := "name"
+	photoColumn := PhotoTable + ".id"
+
+	query := fmt.Sprintf("SELECT %s, %s, owner, uploaded_at FROM %s, %s WHERE owner=%s AND owner=? "+
+		"LIMIT ? OFFSET ?", photoColumn, userColumn, PhotoTable, UserTable, joinParam)
 	rows, err := db.c.Query(query, id, amount, offset)
 
 	if err != nil {
@@ -131,9 +136,7 @@ func (db *appdbimpl) GetUserPhotos(id int64, amount int64, offset int64) ([]Phot
 		}
 	}(rows)
 	for rows.Next() {
-
-		photo.Owner = id
-		err = rows.Scan(&photo.Id, &photo.UploadedAt)
+		err = rows.Scan(&photo.Id, &photo.Owner.Username, &photo.Owner.Id, &photo.UploadedAt)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				dbErr.Code = notFound
