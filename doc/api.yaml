@@ -30,6 +30,14 @@ components:
             description: UnauthorizedError response
             type: string
             example: UnauthorizedError
+    InternalServerError:
+      description: Internal server error
+      content:
+        text/plain:
+          schema:
+            description: InternalServerError response
+            type: string
+            example: InternalServerError
     BadRequest:
       description: Request body wrongly formatted
       content:
@@ -314,7 +322,8 @@ paths:
                 {$ref: "#/components/schemas/UserIdentifier" }
         '400':
           {$ref: "#/components/responses/BadRequest" }
-
+        '500':
+          { $ref: "#/components/responses/InternalServerError"}
 
   /profiles/{user_id}:
     get:
@@ -340,6 +349,8 @@ paths:
           { $ref: "#/components/responses/ForbiddenError" }
         "404":
           { $ref: "#/components/responses/ObjectNotFoundError" }
+        "500":
+          { $ref: "#/components/responses/InternalServerError" }
       security:
         - bearerAuth: [ ]
 
@@ -371,10 +382,12 @@ paths:
           { $ref: "#/components/responses/UnauthorizedError" }
         "404":
             { $ref: "#/components/responses/ObjectNotFoundError"}
+        "500":
+          { $ref: "#/components/responses/InternalServerError" }
       security:
         - bearerAuth: [ ]
 
-  /profiles/{user_id}/photos:
+  /profiles/{user_id}/photos/:
     post:
       parameters:
         - { $ref: "#/components/parameters/user_id" }
@@ -400,6 +413,8 @@ paths:
           {$ref: "#/components/responses/BadRequest"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
+        "500":
+          { $ref: "#/components/responses/InternalServerError" }
       security:
         - bearerAuth: []
 
@@ -428,6 +443,8 @@ paths:
           { $ref: "#/components/responses/ForbiddenError" }
         "404":
           { $ref: "#/components/responses/ObjectNotFoundError" }
+        "500":
+          { $ref: "#/components/responses/InternalServerError" }
       security:
         - bearerAuth: [ ]
     delete:
@@ -448,6 +465,8 @@ paths:
           {$ref: "#/components/responses/ForbiddenError"}
         "404":
           {$ref: "#/components/responses/ObjectNotFoundError"}
+        "500":
+          { $ref: "#/components/responses/InternalServerError" }
       security:
         - bearerAuth: []
 
@@ -469,10 +488,14 @@ paths:
           {$ref: "#/components/responses/FollowingRelationChanged"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
+        "403":
+          { $ref: "#/components/responses/ForbiddenError" }
         "404":
           {$ref: "#/components/responses/ObjectNotFoundError"}
         "409":
           {$ref: "#/components/responses/ConflictResourceStateError"}
+        "500":
+          { $ref: "#/components/responses/InternalServerError" }
       security:
         - bearerAuth: []
     delete:
@@ -489,10 +512,14 @@ paths:
           {$ref: "#/components/responses/FollowingRelationChanged"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
+        "403":
+          { $ref: "#/components/responses/ForbiddenError" }
         "404":
           {$ref: "#/components/responses/ObjectNotFoundError"}
         "409":
           {$ref: "#/components/responses/ConflictResourceStateError"}
+        "500":
+          { $ref: "#/components/responses/InternalServerError" }
       security:
         - bearerAuth: []
 
@@ -513,9 +540,10 @@ paths:
             application/json:
               schema:
                 { $ref: "#/components/schemas/FollowedUsers" }
-
         "401":
           { $ref: "#/components/responses/UnauthorizedError" }
+        "500":
+          { $ref: "#/components/responses/InternalServerError" }
       security:
         - bearerAuth: [ ]
 
@@ -537,10 +565,14 @@ paths:
           {$ref: "#/components/responses/UserBanStateChanged"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
+        "403":
+          { $ref: "#/components/responses/ForbiddenError" }
         "404":
           {$ref: "#/components/responses/ObjectNotFoundError"}
         "409":
           {$ref: "#/components/responses/ConflictResourceStateError"}
+        "500":
+          { $ref: "#/components/responses/InternalServerError" }
       security:
         - bearerAuth: []
     delete:
@@ -561,6 +593,8 @@ paths:
           {$ref: "#/components/responses/ObjectNotFoundError"}
         "409":
           {$ref: "#/components/responses/ConflictResourceStateError"}
+        "500":
+          { $ref: "#/components/responses/InternalServerError" }
       security:
         - bearerAuth: []
 
@@ -583,6 +617,8 @@ paths:
                 {$ref: "#/components/schemas/BannedUsers"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
+        "500":
+          { $ref: "#/components/responses/InternalServerError" }
       security:
         - bearerAuth: []
 
@@ -607,6 +643,8 @@ paths:
                 {$ref: "#/components/schemas/UserStream"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
+        "500":
+          { $ref: "#/components/responses/InternalServerError" }
       security:
         - bearerAuth: []
 
@@ -629,10 +667,14 @@ paths:
           {$ref: "#/components/responses/ObjectCreatedSuccessfully"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
+        "403":
+          { $ref: "#/components/responses/ForbiddenError" }
         "404":
           {$ref: "#/components/responses/ObjectNotFoundError"}
         "409":
           {$ref: "#/components/responses/ConflictResourceStateError"}
+        "500":
+          { $ref: "#/components/responses/InternalServerError" }
       security:
         - bearerAuth: []
     delete:
@@ -649,14 +691,18 @@ paths:
           {$ref: "#/components/responses/ObjectDeletedSuccessfully"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
+        "403":
+          { $ref: "#/components/responses/ForbiddenError" }
         "404":
           {$ref: "#/components/responses/ObjectNotFoundError"}
         "409":
           {$ref: "#/components/responses/ConflictResourceStateError"}
+        "500":
+          { $ref: "#/components/responses/InternalServerError" }
       security:
         - bearerAuth: []
 
-  /profiles/{user_id}/photos/{photo_id}/comments:
+  /profiles/{user_id}/photos/{photo_id}/comments/:
     parameters:
       - {$ref: "#/components/parameters/photo_id"}
       - {$ref: "#/components/parameters/user_id" }
@@ -674,8 +720,14 @@ paths:
             application/json:
               schema:
                 {$ref: "#/components/schemas/PhotoComments"}
+        "403":
+          { $ref: "#/components/responses/ForbiddenError" }
         "404":
           {$ref: "#/components/responses/ObjectNotFoundError"}
+        "500":
+          { $ref: "#/components/responses/InternalServerError" }
+      security:
+        - bearerAuth: []
     post:
       tags: ["photo interaction"]
       summary:  Adds a comment to the photo
@@ -697,8 +749,12 @@ paths:
           {$ref: "#/components/responses/BadRequest"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
+        "403":
+          { $ref: "#/components/responses/ForbiddenError" }
         "404":
           {$ref: "#/components/responses/ObjectNotFoundError"}
+        "500":
+          { $ref: "#/components/responses/InternalServerError" }
       security:
         - bearerAuth: []
 
@@ -724,5 +780,8 @@ paths:
           {$ref: "#/components/responses/ForbiddenError"}
         "404":
           description: Comment not found
+        "500":
+          { $ref: "#/components/responses/InternalServerError" }
+
       security:
         - bearerAuth: [ ]
