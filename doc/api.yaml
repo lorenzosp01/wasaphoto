@@ -120,6 +120,22 @@ components:
       in: path
       required: true
       description: User identifier
+    photoAmount:
+      schema:
+        type: integer
+        example: 10
+      name: amount
+      in: query
+      required: false
+      description: Amount of photos to return
+    photoOffset:
+      schema:
+        type: integer
+        example: 0
+      name: offset
+      in: query
+      required: false
+      description: Offset of photos to return
     photo_id:
       name: photo_id
       schema:
@@ -243,6 +259,22 @@ components:
         owner:  {$ref: "#/components/schemas/User"}
         uploaded_at:
          { $ref: "#/components/schemas/Uploaded_at"}
+    CommentWithoutDate:
+      type: object
+      description: Comment on a photo
+      properties:
+        id:
+          description: Comment identifier
+          type: integer
+          example: 1
+        text:
+          type: string
+          description: Content of the comment
+          example: Good photo
+          minLength: 1
+          maxLength: 100
+          pattern: '^[ a-zA-Z0-9_.-]*'
+        owner: { $ref: "#/components/schemas/User" }
     PhotoComments:
       description: Object with photo comments
       type: object
@@ -329,6 +361,8 @@ paths:
     get:
       parameters:
         - { $ref: "#/components/parameters/user_id" }
+        - { $ref: "#/components/parameters/photoAmount" }
+        - { $ref: "#/components/parameters/photoOffset" }
       tags: [ "manage profile" ]
       summary: Gets a user profile
       description: |-
@@ -380,6 +414,8 @@ paths:
           { $ref: "#/components/responses/BadRequest" }
         "401":
           { $ref: "#/components/responses/UnauthorizedError" }
+        "403":
+          { $ref: "#/components/responses/ForbiddenError" }
         "404":
             { $ref: "#/components/responses/ObjectNotFoundError"}
         "500":
@@ -413,6 +449,8 @@ paths:
           {$ref: "#/components/responses/BadRequest"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
+        "403":
+          { $ref: "#/components/responses/ForbiddenError" }
         "500":
           { $ref: "#/components/responses/InternalServerError" }
       security:
@@ -542,6 +580,8 @@ paths:
                 { $ref: "#/components/schemas/FollowedUsers" }
         "401":
           { $ref: "#/components/responses/UnauthorizedError" }
+        "403":
+          { $ref: "#/components/responses/ForbiddenError" }
         "500":
           { $ref: "#/components/responses/InternalServerError" }
       security:
@@ -617,6 +657,8 @@ paths:
                 {$ref: "#/components/schemas/BannedUsers"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
+        "403":
+          {$ref: "#/components/responses/ForbiddenError"}
         "500":
           { $ref: "#/components/responses/InternalServerError" }
       security:
@@ -626,6 +668,8 @@ paths:
     get:
       parameters:
         - { $ref: "#/components/parameters/user_id" }
+        - { $ref: "#/components/parameters/photoAmount" }
+        - { $ref: "#/components/parameters/photoOffset" }
       tags: ["stream"]
       summary:  Gets authenticated user photos stream
       description: |-
@@ -643,6 +687,8 @@ paths:
                 {$ref: "#/components/schemas/UserStream"}
         "401":
           {$ref: "#/components/responses/UnauthorizedError"}
+        "403":
+          { $ref: "#/components/responses/ForbiddenError" }
         "500":
           { $ref: "#/components/responses/InternalServerError" }
       security:
@@ -741,7 +787,7 @@ paths:
         content:
           application/json:
             schema:
-                {$ref: "#/components/schemas/Comment"}
+                {$ref: "#/components/schemas/CommentWithoutDate"}
       responses:
         "201":
           {$ref: "#/components/responses/ObjectCreatedSuccessfully"}

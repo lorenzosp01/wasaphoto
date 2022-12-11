@@ -74,7 +74,7 @@ func (rt *_router) authWrap(fn httpRouterHandler) func(w http.ResponseWriter, r 
 		isAuthorized := utils.Authorize(params["token"], params["user_id"])
 
 		if !isAuthorized {
-			rt.LoggerAndHttpErrorSender(w, errors.New("user not authorized"), utils.HttpError{StatusCode: 401, Message: "User not authorized"})
+			rt.LoggerAndHttpErrorSender(w, errors.New("user not authorized"), utils.HttpError{StatusCode: 403, Message: "You can't impersonate other users"})
 			return
 		}
 
