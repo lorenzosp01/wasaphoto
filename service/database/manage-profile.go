@@ -113,6 +113,16 @@ func (db *appdbimpl) GetUserPhotos(id int64, amount int64, offset int64) ([]Phot
 		"LIMIT ? OFFSET ?", photoColumn, userColumn, PhotoTable, UserTable, joinParam)
 	rows, err := db.c.Query(query, id, amount, offset)
 
+	rows.Err()
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+			dbErr.Code = genericError
+			dbErr.InternalError = err
+
+		}
+	}(rows)
+
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			dbErr.Code = forbiddenAction
@@ -127,14 +137,7 @@ func (db *appdbimpl) GetUserPhotos(id int64, amount int64, offset int64) ([]Phot
 
 	var photos []Photo
 	var photo Photo
-	defer func(rows *sql.Rows) {
-		err := rows.Close()
-		if err != nil {
-			dbErr.Code = genericError
-			dbErr.InternalError = err
 
-		}
-	}(rows)
 	for rows.Next() {
 		err = rows.Scan(&photo.Id, &photo.Owner.Username, &photo.Owner.Id, &photo.UploadedAt)
 		if err != nil {
@@ -155,6 +158,12 @@ func (db *appdbimpl) GetUserPhotos(id int64, amount int64, offset int64) ([]Phot
 
 		photos = append(photos, photo)
 		amount--
+	}
+
+	err = rows.Err()
+	if err != nil {
+		dbErr.Code = genericError
+		dbErr.InternalError = err
 	}
 
 	return photos, dbErr

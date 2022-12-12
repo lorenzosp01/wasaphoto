@@ -23,14 +23,12 @@ func (db *appdbimpl) TargetUser(authUserId int64, userId int64, tableName string
 
 	_, err := db.c.Exec(query, authUserId, userId)
 	if err != nil {
-		if errors.As(err, &sqlite3.Error{}) {
-			specificErr, ok := err.(sqlite3.Error)
-			if ok {
-				if errors.Is(specificErr.ExtendedCode, sqlite3.ErrConstraintPrimaryKey) {
-					dbErr.InternalError = err
-					dbErr.Code = entityAlreadyExists
-					dbErr.CustomMessage = "user already targeted by a " + tableName
-				}
+		var sqlErr sqlite3.Error
+		if errors.As(err, &sqlErr) {
+			if errors.Is(sqlErr.ExtendedCode, sqlite3.ErrConstraintPrimaryKey) {
+				dbErr.InternalError = err
+				dbErr.Code = entityAlreadyExists
+				dbErr.CustomMessage = "user already targeted by a " + tableName
 			} else {
 				dbErr.InternalError = errors.New("error casting error to sqlite3.Error")
 				dbErr.Code = genericError
@@ -74,6 +72,7 @@ func (db *appdbimpl) GetUsersList(authUserId int64, tableName string) ([]User, D
 	var query string
 	var dbErr DbError
 	dbErr.Code = genericError
+	var users []User
 
 	switch tableName {
 	case BanTable:
@@ -85,11 +84,7 @@ func (db *appdbimpl) GetUsersList(authUserId int64, tableName string) ([]User, D
 	}
 
 	rows, err := db.c.Query(query, authUserId)
-	if err != nil {
-		dbErr.InternalError = err
-	}
 
-	var users []User
 	defer func(rows *sql.Rows) {
 		err := rows.Close()
 		if err != nil {
@@ -97,6 +92,12 @@ func (db *appdbimpl) GetUsersList(authUserId int64, tableName string) ([]User, D
 			dbErr.InternalError = err
 		}
 	}(rows)
+
+	if err != nil {
+		dbErr.InternalError = err
+		return users, dbErr
+	}
+
 	for rows.Next() {
 		var user User
 		err = rows.Scan(&user.Id)
@@ -109,6 +110,12 @@ func (db *appdbimpl) GetUsersList(authUserId int64, tableName string) ([]User, D
 			dbErr.InternalError = err
 		}
 		users = append(users, user)
+	}
+
+	err = rows.Err()
+	if err != nil {
+		dbErr.Code = genericError
+		dbErr.InternalError = err
 	}
 
 	if users == nil {

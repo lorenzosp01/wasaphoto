@@ -21,7 +21,7 @@ func (rt *_router) likePhoto(w http.ResponseWriter, r *http.Request, params map[
 	isBanned, dbErr := rt.db.IsUserTargeted(userId, authUserId, database.BanTable)
 	if dbErr.InternalError != nil {
 		if isBanned {
-			dbErr.CustomMessage = "You are banned"
+			dbErr.CustomMessage = utils.BannedMessage
 		}
 		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
@@ -49,7 +49,7 @@ func (rt *_router) unlikePhoto(w http.ResponseWriter, r *http.Request, params ma
 	isBanned, dbErr := rt.db.IsUserTargeted(userId, authUserId, database.BanTable)
 	if dbErr.InternalError != nil {
 		if isBanned {
-			dbErr.CustomMessage = "You are banned"
+			dbErr.CustomMessage = utils.BannedMessage
 		}
 		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
@@ -75,7 +75,7 @@ func (rt *_router) commentPhoto(w http.ResponseWriter, r *http.Request, params m
 	isBanned, dbErr := rt.db.IsUserTargeted(userId, authUserId, database.BanTable)
 	if dbErr.InternalError != nil {
 		if isBanned {
-			dbErr.CustomMessage = "You are banned"
+			dbErr.CustomMessage = utils.BannedMessage
 		}
 		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
@@ -106,7 +106,7 @@ func (rt *_router) getPhotoComments(w http.ResponseWriter, r *http.Request, para
 	isBanned, dbErr := rt.db.IsUserTargeted(userId, authUserId, database.BanTable)
 	if dbErr.InternalError != nil {
 		if isBanned {
-			dbErr.CustomMessage = "You are banned"
+			dbErr.CustomMessage = utils.BannedMessage
 		}
 		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return

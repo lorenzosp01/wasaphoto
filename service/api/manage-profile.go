@@ -35,7 +35,7 @@ func (rt *_router) getImage(w http.ResponseWriter, r *http.Request, params map[s
 
 	userIsBanned, dbErr := rt.db.IsUserTargeted(authUserId, userId, database.BanTable)
 	if userIsBanned {
-		dbErr.CustomMessage = "You are banned"
+		dbErr.CustomMessage = utils.BannedMessage
 		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
 	} else {
@@ -112,7 +112,7 @@ func (rt *_router) getUserProfile(w http.ResponseWriter, r *http.Request, params
 	userIsBanned, dbErr = rt.db.IsUserTargeted(userId, authUserId, database.BanTable)
 
 	if userIsBanned {
-		dbErr.CustomMessage = "You are banned"
+		dbErr.CustomMessage = utils.BannedMessage
 		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
 	} else {
