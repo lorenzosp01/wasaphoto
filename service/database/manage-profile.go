@@ -113,7 +113,6 @@ func (db *appdbimpl) GetUserPhotos(id int64, amount int64, offset int64) ([]Phot
 		"LIMIT ? OFFSET ?", photoColumn, userColumn, PhotoTable, UserTable, joinParam)
 	rows, err := db.c.Query(query, id, amount, offset)
 
-	rows.Err()
 	defer func(rows *sql.Rows) {
 		err := rows.Close()
 		if err != nil {

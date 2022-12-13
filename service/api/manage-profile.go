@@ -90,9 +90,7 @@ func (rt *_router) deletePhoto(w http.ResponseWriter, r *http.Request, params ma
 	photoId := params["photo_id"]
 	userId := params["user_id"]
 
-	var dbErr database.DbError
-
-	dbErr = rt.db.DeletePhoto(photoId, userId)
+	dbErr := rt.db.DeletePhoto(photoId, userId)
 	if dbErr.InternalError != nil {
 		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
