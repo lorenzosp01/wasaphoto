@@ -6,11 +6,6 @@ import (
 	"wasaphoto/service/utils"
 )
 
-const(
-	photoBelongingMessage = "Photo doesn't belong to that user"
-	bannedMassage = "You are banned"
-)
-
 type CommentsObject struct {
 	Comments []Comment `json:"comments"`
 }

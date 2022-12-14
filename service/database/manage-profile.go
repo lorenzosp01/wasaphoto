@@ -110,7 +110,7 @@ func (db *appdbimpl) GetUserPhotos(id int64, amount int64, offset int64) ([]Phot
 	photoColumn := PhotoTable + ".id"
 
 	query := fmt.Sprintf("SELECT %s, %s, owner, uploaded_at FROM %s, %s WHERE owner=%s AND owner=? "+
-		"LIMIT ? OFFSET ?", photoColumn, userColumn, PhotoTable, UserTable, joinParam)
+		"LIMIT ? OFFSET ? ORDER BY uploaded_at DESC", photoColumn, userColumn, PhotoTable, UserTable, joinParam)
 	rows, err := db.c.Query(query, id, amount, offset)
 
 	defer func(rows *sql.Rows) {

@@ -8,7 +8,6 @@ import (
 	"wasaphoto/service/utils"
 )
 
-
 func (db *appdbimpl) doesPhotoBelongToUser(photo int64, userId int64) bool {
 	var count int
 	query := fmt.Sprintf("SELECT count(*) FROM %s WHERE id=? AND owner=?", PhotoTable)
