@@ -118,7 +118,6 @@ func (db *appdbimpl) GetUserPhotos(id int64, amount int64, offset int64) ([]Phot
 		if err != nil {
 			dbErr.Code = genericError
 			dbErr.InternalError = err
-
 		}
 	}(rows)
 
