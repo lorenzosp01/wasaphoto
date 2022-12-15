@@ -58,7 +58,7 @@ func (rt *_router) wrap(fn httpRouterHandler, dbTables []string) func(w http.Res
 
 		for paramKey, param := range r.URL.Query() {
 			params[paramKey], err = strconv.ParseInt(param[0], 10, 64)
-			if err != nil {
+			if err != nil && paramKey != "pattern" {
 				rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 401, Message: "Bad request"})
 				return
 			}

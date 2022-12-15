@@ -14,7 +14,7 @@ func (db *appdbimpl) InsertPhoto(image []byte, ownerId int64) DbError {
 	// If the insert was unsuccessful, return an error
 	if err != nil {
 		dbErr.InternalError = err
-		dbErr.Code = genericError
+		dbErr.Code = GenericError
 	}
 
 	return dbErr
@@ -30,9 +30,9 @@ func (db *appdbimpl) GetImage(photo int64, user int64) ([]byte, DbError) {
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			dbErr.CustomMessage = "that image doesn't belongs to the user in path"
-			dbErr.Code = genericConfilct
+			dbErr.Code = GenericConflict
 		} else {
-			dbErr.Code = genericError
+			dbErr.Code = GenericError
 		}
 		dbErr.InternalError = err
 	}
@@ -47,7 +47,7 @@ func (db *appdbimpl) ChangeUsername(id int64, newUsername string) DbError {
 
 	if err != nil {
 		dbErr.InternalError = err
-		dbErr.Code = genericError
+		dbErr.Code = GenericError
 	}
 
 	return dbErr
@@ -60,11 +60,11 @@ func (db *appdbimpl) DeletePhoto(photo int64, user int64) DbError {
 		query := fmt.Sprintf("DELETE FROM %s WHERE id=? AND owner=?", PhotoTable)
 		_, err := db.c.Exec(query, photo, user)
 		if err != nil {
-			dbErr.Code = genericError
+			dbErr.Code = GenericError
 			dbErr.InternalError = err
 		}
 	} else {
-		dbErr.Code = genericConfilct
+		dbErr.Code = GenericConflict
 		dbErr.CustomMessage = "That photo doesn't belongs to the authenticated user"
 		dbErr.InternalError = errors.New("Photo and photo owner don't match")
 	}
@@ -82,10 +82,10 @@ func (db *appdbimpl) GetUserProfile(id int64, photosAmount int64, photosOffset i
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			dbErr.Code = notFound
+			dbErr.Code = NotFound
 			dbErr.CustomMessage = "User not found"
 		} else {
-			dbErr.Code = genericError
+			dbErr.Code = GenericError
 		}
 
 		dbErr.InternalError = err
@@ -110,23 +110,17 @@ func (db *appdbimpl) GetUserPhotos(id int64, amount int64, offset int64) ([]Phot
 	photoColumn := PhotoTable + ".id"
 
 	query := fmt.Sprintf("SELECT %s, %s, owner, uploaded_at FROM %s, %s WHERE owner=%s AND owner=? "+
-		"LIMIT ? OFFSET ? ORDER BY uploaded_at DESC", photoColumn, userColumn, PhotoTable, UserTable, joinParam)
+		"ORDER BY uploaded_at DESC LIMIT ? OFFSET ?", photoColumn, userColumn, PhotoTable, UserTable, joinParam)
 	rows, err := db.c.Query(query, id, amount, offset)
 
-	defer func(rows *sql.Rows) {
-		err := rows.Close()
-		if err != nil {
-			dbErr.Code = genericError
-			dbErr.InternalError = err
-		}
-	}(rows)
+	defer rows.Close()
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			dbErr.Code = forbiddenAction
-			dbErr.CustomMessage = "That user doesn't owns that photo"
+			dbErr.Code = ForbiddenAction
+			dbErr.CustomMessage = "That user doesn't own that photo"
 		} else {
-			dbErr.Code = genericError
+			dbErr.Code = GenericError
 		}
 
 		dbErr.InternalError = err
@@ -140,10 +134,10 @@ func (db *appdbimpl) GetUserPhotos(id int64, amount int64, offset int64) ([]Phot
 		err = rows.Scan(&photo.Id, &photo.Owner.Username, &photo.Owner.Id, &photo.UploadedAt)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
-				dbErr.Code = notFound
+				dbErr.Code = NotFound
 				dbErr.CustomMessage = "User not found"
 			} else {
-				dbErr.Code = genericError
+				dbErr.Code = GenericError
 			}
 			dbErr.InternalError = err
 			return nil, dbErr
@@ -160,7 +154,7 @@ func (db *appdbimpl) GetUserPhotos(id int64, amount int64, offset int64) ([]Phot
 
 	err = rows.Err()
 	if err != nil {
-		dbErr.Code = genericError
+		dbErr.Code = GenericError
 		dbErr.InternalError = err
 	}
 
@@ -175,7 +169,7 @@ func (db *appdbimpl) getPhotoCounters(photoId int64) (PhotoCounters, DbError) {
 	err := db.c.QueryRow(query, photoId).Scan(&photoCounters.LikesCounter)
 	if err != nil {
 		dbErr.InternalError = err
-		dbErr.Code = genericError
+		dbErr.Code = GenericError
 		return photoCounters, dbErr
 	}
 
@@ -183,7 +177,7 @@ func (db *appdbimpl) getPhotoCounters(photoId int64) (PhotoCounters, DbError) {
 	err = db.c.QueryRow(query, photoId).Scan(&photoCounters.CommentsCounter)
 	if err != nil {
 		dbErr.InternalError = err
-		dbErr.Code = genericError
+		dbErr.Code = GenericError
 	}
 
 	return photoCounters, dbErr
@@ -197,7 +191,7 @@ func (db *appdbimpl) getProfileCounters(id int64) (ProfileCounters, DbError) {
 	err := db.c.QueryRow(query, id).Scan(&profileCounters.FollowingCounter)
 	if err != nil {
 		dbErr.InternalError = err
-		dbErr.Code = genericError
+		dbErr.Code = GenericError
 		return profileCounters, dbErr
 	}
 
@@ -205,7 +199,7 @@ func (db *appdbimpl) getProfileCounters(id int64) (ProfileCounters, DbError) {
 	err = db.c.QueryRow(query, id).Scan(&profileCounters.FollowersCounter)
 	if err != nil {
 		dbErr.InternalError = err
-		dbErr.Code = genericError
+		dbErr.Code = GenericError
 		return profileCounters, dbErr
 	}
 
@@ -213,7 +207,7 @@ func (db *appdbimpl) getProfileCounters(id int64) (ProfileCounters, DbError) {
 	err = db.c.QueryRow(query, id).Scan(&profileCounters.PhotosCounter)
 	if err != nil {
 		dbErr.InternalError = err
-		dbErr.Code = genericError
+		dbErr.Code = GenericError
 	}
 
 	return profileCounters, dbErr

@@ -19,7 +19,7 @@ func (db *appdbimpl) GetUserId(username string) (int64, DbError) {
 		id, err = db.createUser(username)
 		if err != nil {
 			dbErr.InternalError = err
-			dbErr.Code = genericError
+			dbErr.Code = GenericError
 			return id, dbErr
 		}
 	}

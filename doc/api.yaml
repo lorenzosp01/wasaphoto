@@ -14,6 +14,8 @@ tags:
     description: Login user
   - name: manage profile
     description: Manage user profile
+  - name: search
+    description: Search users
 
 components:
   securitySchemes:
@@ -104,6 +106,17 @@ components:
             example: Like added successfully
 
   parameters:
+    pattern:
+      name: pattern
+      in: query
+      description: Pattern to search users
+      required: true
+      schema:
+          type: string
+          pattern: '^[a-zA-Z0-9_.]*$'
+          example: 'marc'
+          minLength: 3
+          maxLength: 16
     user_id:
       schema:
         type: integer
@@ -328,6 +341,16 @@ components:
       type: object
       properties:
         username: { $ref: "#/components/schemas/Username" }
+    UsersList:
+        description: Object with the users list
+        type: object
+        properties:
+          users:
+            description: Users
+            type: array
+            items: { $ref: "#/components/schemas/User" }
+            minItems: 0
+            maxItems: 100
 paths:
   /session:
     post:
@@ -356,6 +379,31 @@ paths:
           {$ref: "#/components/responses/BadRequest" }
         '500':
           { $ref: "#/components/responses/InternalServerError"}
+
+  /search:
+    get:
+      parameters:
+        - { $ref: "#/components/parameters/pattern" }
+      tags: ["search"]
+      summary:  Search users by pattern
+      description:
+        Search users by matching usernames with the given pattern or username
+      operationId:  doSearch
+      responses:
+        "200":
+          description: Search action successful
+          content:
+            application/json:
+              schema:
+                {$ref: "#/components/schemas/UsersList" }
+        "400":
+          { $ref: "#/components/responses/BadRequest" }
+        "404":
+          { $ref: "#/components/responses/ObjectNotFoundError" }
+        "500":
+          { $ref: "#/components/responses/InternalServerError" }
+      security:
+        - bearerAuth: []
 
   /profiles/{user_id}:
     get:

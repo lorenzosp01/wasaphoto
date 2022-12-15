@@ -60,6 +60,7 @@ type AppDatabase interface {
 	doesPhotoBelongToUser(int64, int64) bool
 	GetPhotoComments(int64, int64) ([]Comment, DbError)
 	DeleteComment(int64, int64, int64, int64) DbError
+	DoSearch(string) ([]User, DbError)
 }
 
 type UserProfile struct {
@@ -105,12 +106,12 @@ type DbError struct {
 }
 
 const (
-	notFound            int = 1
-	forbiddenAction     int = 2
-	badInput            int = 3
-	entityAlreadyExists int = 4
-	genericError        int = 5
-	genericConfilct     int = 6
+	NotFound            int = 1
+	ForbiddenAction     int = 2
+	BadInput            int = 3
+	EntityAlreadyExists int = 4
+	GenericError        int = 5
+	GenericConflict     int = 6
 )
 
 var ErrNoRowsDeleted = errors.New("no rows deleted")
@@ -123,15 +124,15 @@ func (e DbError) ToHttp() utils.HttpError {
 		httpErr.Message = "Internal error"
 	}
 	switch e.Code {
-	case notFound:
+	case NotFound:
 		httpErr.StatusCode = http.StatusNotFound
-	case forbiddenAction:
+	case ForbiddenAction:
 		httpErr.StatusCode = http.StatusForbidden
-	case badInput:
+	case BadInput:
 		httpErr.StatusCode = http.StatusBadRequest
-	case entityAlreadyExists, genericConfilct:
+	case EntityAlreadyExists, GenericConflict:
 		httpErr.StatusCode = http.StatusConflict
-	case genericError:
+	case GenericError:
 		httpErr.StatusCode = http.StatusInternalServerError
 	}
 	return httpErr
@@ -175,10 +176,10 @@ func (db *appdbimpl) EntityExists(id int64, tableToUse string) DbError {
 	if err != nil {
 		dbErr.InternalError = err
 		if errors.Is(err, sql.ErrNoRows) {
-			dbErr.Code = notFound
+			dbErr.Code = NotFound
 			dbErr.CustomMessage = tableToUse + " not found"
 		} else {
-			dbErr.Code = genericError
+			dbErr.Code = GenericError
 		}
 
 	}
@@ -195,7 +196,7 @@ func (db *appdbimpl) IsUserTargeted(targetingUserId int64, targetedUserId int64,
 	case FollowTable:
 		query = fmt.Sprintf("SELECT count(*) FROM %s WHERE following=? AND follower=?", FollowTable)
 	default:
-		dbErr.Code = badInput
+		dbErr.Code = BadInput
 		dbErr.CustomMessage = "Invalid parameters"
 		return false, dbErr
 	}
@@ -205,13 +206,13 @@ func (db *appdbimpl) IsUserTargeted(targetingUserId int64, targetedUserId int64,
 
 	if err != nil {
 		dbErr.InternalError = err
-		dbErr.Code = genericError
+		dbErr.Code = GenericError
 		return false, dbErr
 	}
 
 	if targetCount > 0 {
 		dbErr.InternalError = errors.New("User is targeted")
-		dbErr.Code = forbiddenAction
+		dbErr.Code = ForbiddenAction
 	}
 
 	return targetCount > 0, dbErr

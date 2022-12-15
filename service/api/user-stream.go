@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"sort"
 	"wasaphoto/service/database"
 )
 
@@ -36,6 +37,10 @@ func (rt *_router) getMyStream(w http.ResponseWriter, r *http.Request, params ma
 			photos = append(photos, photo)
 		}
 	}
+
+	sort.Slice(photos, func(i, j int) bool {
+		return photos[i].UploadedAt > photos[j].UploadedAt
+	})
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(UserStream{photos})

@@ -29,6 +29,7 @@ func (rt *_router) Handler() http.Handler {
 	rt.router.POST("/profiles/:user_id/photos/:photo_id/comments/", rt.wrap(rt.commentPhoto, []string{database.UserTable, database.PhotoTable}))
 	rt.router.DELETE("/profiles/:user_id/photos/:photo_id/comments/:comment_id", rt.wrap(rt.deleteComment, []string{database.UserTable, database.PhotoTable, database.CommentTable}))
 	rt.router.GET("/profiles/:user_id/photos/:photo_id/comments/", rt.wrap(rt.getPhotoComments, []string{database.UserTable, database.PhotoTable}))
+	rt.router.GET("/search", rt.wrap(rt.doSearch, []string{}))
 	// Stream
 	rt.router.GET("/stream/:user_id", rt.wrap(rt.authWrap(rt.getMyStream), []string{database.UserTable}))
 	// Special routes

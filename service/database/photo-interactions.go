@@ -1,7 +1,6 @@
 package database
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/mattn/go-sqlite3"
@@ -31,16 +30,16 @@ func (db *appdbimpl) LikePhoto(authUser int64, photo int64, photoOwner int64) Db
 			if errors.As(err, &sqlErr) {
 				if errors.Is(sqlErr.ExtendedCode, sqlite3.ErrConstraintPrimaryKey) {
 					dbErr.InternalError = err
-					dbErr.Code = entityAlreadyExists
+					dbErr.Code = EntityAlreadyExists
 					dbErr.CustomMessage = "User already liked that photo"
 				} else {
 					dbErr.InternalError = err
-					dbErr.Code = genericError
+					dbErr.Code = GenericError
 				}
 			}
 		}
 	} else {
-		dbErr.Code = genericConfilct
+		dbErr.Code = GenericConflict
 		dbErr.CustomMessage = utils.PhotoBelongingMessage
 		dbErr.InternalError = errors.New("photo and photo owner don't match")
 	}
@@ -57,17 +56,17 @@ func (db *appdbimpl) UnlikePhoto(authUser int64, photo int64, photoOwner int64) 
 
 		if err != nil {
 			dbErr.InternalError = err
-			dbErr.Code = genericError
+			dbErr.Code = GenericError
 		} else {
 			affected, _ := res.RowsAffected()
 			if affected == 0 {
-				dbErr.Code = notFound
+				dbErr.Code = NotFound
 				dbErr.CustomMessage = "There is no like from that user in that photo"
 				dbErr.InternalError = ErrNoRowsDeleted
 			}
 		}
 	} else {
-		dbErr.Code = forbiddenAction
+		dbErr.Code = ForbiddenAction
 		dbErr.CustomMessage = utils.PhotoBelongingMessage
 		dbErr.InternalError = errors.New("Photo and photo owner don't match")
 	}
@@ -83,11 +82,11 @@ func (db *appdbimpl) CommentPhoto(authUser int64, photo int64, photoOwner int64,
 		_, err := db.c.Exec(query, authUser, photo, commentText)
 
 		if err != nil {
-			dbErr.Code = genericError
+			dbErr.Code = GenericError
 			dbErr.InternalError = err
 		}
 	} else {
-		dbErr.Code = genericConfilct
+		dbErr.Code = GenericConflict
 		dbErr.CustomMessage = utils.PhotoBelongingMessage
 		dbErr.InternalError = errors.New("photo and photo owner don't match")
 	}
@@ -104,17 +103,17 @@ func (db *appdbimpl) DeleteComment(photo int64, photoOwner int64, commentOwner i
 
 		if err != nil {
 			dbErr.InternalError = err
-			dbErr.Code = genericError
+			dbErr.Code = GenericError
 		} else {
 			affected, _ := res.RowsAffected()
 			if affected == 0 {
-				dbErr.Code = genericConfilct
+				dbErr.Code = GenericConflict
 				dbErr.CustomMessage = "Comment doesn't belong to that photo or that user isn't the owner of the comment"
 				dbErr.InternalError = ErrNoRowsDeleted
 			}
 		}
 	} else {
-		dbErr.Code = genericConfilct
+		dbErr.Code = GenericConflict
 		dbErr.CustomMessage = utils.PhotoBelongingMessage
 		dbErr.InternalError = errors.New("photo and photo owner don't match")
 	}
@@ -133,23 +132,17 @@ func (db *appdbimpl) GetPhotoComments(photo int64, photoOwner int64) ([]Comment,
 		query := fmt.Sprintf("SELECT %s, owner, %s, content, created_at FROM %s, %s WHERE owner=%s AND photo=?", commentColumn, userColumn, CommentTable, UserTable, joinParam)
 		rows, err := db.c.Query(query, photo)
 
-		defer func(rows *sql.Rows) {
-			err := rows.Close()
-			if err != nil {
-				dbErr.Code = genericError
-				dbErr.InternalError = err
-			}
-		}(rows)
+		defer rows.Close()
 
 		if err != nil {
-			dbErr.Code = genericError
+			dbErr.Code = GenericError
 			dbErr.InternalError = err
 		} else {
 			for rows.Next() {
 				var comment Comment
 				err := rows.Scan(&comment.Id, &comment.Owner.Id, &comment.Owner.Username, &comment.Content, &comment.CreatedAt)
 				if err != nil {
-					dbErr.Code = genericError
+					dbErr.Code = GenericError
 					dbErr.InternalError = err
 					break
 				}
@@ -158,12 +151,12 @@ func (db *appdbimpl) GetPhotoComments(photo int64, photoOwner int64) ([]Comment,
 
 			err = rows.Err()
 			if err != nil {
-				dbErr.Code = genericError
+				dbErr.Code = GenericError
 				dbErr.InternalError = err
 			}
 		}
 	} else {
-		dbErr.Code = genericConfilct
+		dbErr.Code = GenericConflict
 		dbErr.CustomMessage = utils.PhotoBelongingMessage
 		dbErr.InternalError = errors.New("photo and photo owner don't match")
 	}

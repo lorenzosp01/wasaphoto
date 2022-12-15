@@ -40,6 +40,15 @@ func (rt *_router) targetUser(w http.ResponseWriter, r *http.Request, params map
 			return
 		}
 
+	} else if entityTable == database.BanTable {
+		isTargeted, dbErr := rt.db.IsUserTargeted(targetedUserId, authUserId, database.FollowTable)
+		if dbErr.InternalError != nil {
+			rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
+			return
+		}
+		if isTargeted {
+			rt.db.UntargetUser(targetedUserId, authUserId, database.FollowTable)
+		}
 	}
 
 	dbErr := rt.db.TargetUser(authUserId, targetedUserId, entityTable)
