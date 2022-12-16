@@ -113,8 +113,6 @@ func (db *appdbimpl) GetUserPhotos(id int64, amount int64, offset int64) ([]Phot
 		"ORDER BY uploaded_at DESC LIMIT ? OFFSET ?", photoColumn, userColumn, PhotoTable, UserTable, joinParam)
 	rows, err := db.c.Query(query, id, amount, offset)
 
-	defer rows.Close()
-
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			dbErr.Code = ForbiddenAction
@@ -157,6 +155,8 @@ func (db *appdbimpl) GetUserPhotos(id int64, amount int64, offset int64) ([]Phot
 		dbErr.Code = GenericError
 		dbErr.InternalError = err
 	}
+
+	defer rows.Close()
 
 	return photos, dbErr
 }

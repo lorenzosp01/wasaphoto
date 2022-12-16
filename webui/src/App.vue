@@ -1,5 +1,6 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router'
+import LoginView from "@/views/LoginView.vue";
 </script>
 <script>
 export default {
@@ -58,6 +59,7 @@ export default {
 			</nav>
 
 			<main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+				<br>
 				<RouterView />
 			</main>
 		</div>

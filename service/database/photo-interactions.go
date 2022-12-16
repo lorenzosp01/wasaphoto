@@ -132,8 +132,6 @@ func (db *appdbimpl) GetPhotoComments(photo int64, photoOwner int64) ([]Comment,
 		query := fmt.Sprintf("SELECT %s, owner, %s, content, created_at FROM %s, %s WHERE owner=%s AND photo=?", commentColumn, userColumn, CommentTable, UserTable, joinParam)
 		rows, err := db.c.Query(query, photo)
 
-		defer rows.Close()
-
 		if err != nil {
 			dbErr.Code = GenericError
 			dbErr.InternalError = err
@@ -154,6 +152,8 @@ func (db *appdbimpl) GetPhotoComments(photo int64, photoOwner int64) ([]Comment,
 				dbErr.Code = GenericError
 				dbErr.InternalError = err
 			}
+
+			defer rows.Close()
 		}
 	} else {
 		dbErr.Code = GenericConflict

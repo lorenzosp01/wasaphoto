@@ -84,8 +84,6 @@ func (db *appdbimpl) GetUsersList(authUserId int64, tableName string) ([]User, D
 
 	rows, err := db.c.Query(query, authUserId)
 
-	defer rows.Close()
-
 	if err != nil {
 		dbErr.InternalError = err
 		return users, dbErr
@@ -96,11 +94,13 @@ func (db *appdbimpl) GetUsersList(authUserId int64, tableName string) ([]User, D
 		err = rows.Scan(&user.Id)
 		if err != nil {
 			dbErr.InternalError = err
+			return nil, dbErr
 		}
 		query = fmt.Sprintf("SELECT name FROM %s WHERE id=?", UserTable)
 		err = db.c.QueryRow(query, user.Id).Scan(&user.Username)
 		if err != nil {
 			dbErr.InternalError = err
+			return nil, dbErr
 		}
 		users = append(users, user)
 	}
@@ -109,6 +109,7 @@ func (db *appdbimpl) GetUsersList(authUserId int64, tableName string) ([]User, D
 	if err != nil {
 		dbErr.Code = GenericError
 		dbErr.InternalError = err
+		return nil, dbErr
 	}
 
 	if users == nil {
@@ -116,6 +117,8 @@ func (db *appdbimpl) GetUsersList(authUserId int64, tableName string) ([]User, D
 		dbErr.CustomMessage = "no users targeted by " + tableName
 		dbErr.InternalError = errors.New("no users found in db")
 	}
+
+	defer rows.Close()
 
 	return users, dbErr
 }

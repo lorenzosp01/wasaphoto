@@ -9,8 +9,6 @@ func (db *appdbimpl) DoSearch(pattern string) ([]User, DbError) {
 	query := fmt.Sprintf("SELECT id, name FROM %s WHERE name LIKE ?", UserTable)
 	rows, err := db.c.Query(query, pattern)
 
-	defer rows.Close()
-
 	if err != nil {
 		dbErr.Code = GenericError
 		dbErr.InternalError = err
@@ -21,6 +19,7 @@ func (db *appdbimpl) DoSearch(pattern string) ([]User, DbError) {
 			if err != nil {
 				dbErr.Code = GenericError
 				dbErr.InternalError = err
+				return nil, dbErr
 			}
 			users = append(users, user)
 		}
@@ -28,8 +27,11 @@ func (db *appdbimpl) DoSearch(pattern string) ([]User, DbError) {
 		if rows.Err() != nil {
 			dbErr.Code = GenericError
 			dbErr.InternalError = err
+			return nil, dbErr
 		}
 	}
+
+	defer rows.Close()
 
 	return users, dbErr
 }
