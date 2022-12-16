@@ -1,29 +1,52 @@
-<template>
-	   <div>
-			<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-			  <h1 class="h2">Login</h1>
-			  <div class="btn-toolbar mb-2 mb-md-0">
-			  </div>
-			</div>
-		<div class="row">
-		  <div class="col-md-6">
-			<form @submit.prevent="login">
-			  <div class="form-group">
-				<label for="username">Username</label>
-				<input type="text" class="form-control" id="username" v-model="username" placeholder="Enter username">
-			  	<button type="submit" class="btn btn-primary">Login</button>
-			  </div>
-			</form>
-		  </div>
-		</div>
-	  </div>
-</template>
-<script>
-export default {
-	name: "Login"
+<script setup>
+import {inject, ref} from "vue";
+
+const username = ref("");
+const error_msg = ref(null);
+const axios = inject("axios");
+const router = inject("router");
+const isLogged = ref(false);
+
+const emit = defineEmits(["login"]);
+
+async function login() {
+	if (username.value) {
+		try {
+			let response = await axios.post("/session", {
+				username: username.value,
+			})
+			router.push("/home");
+			emit("login", response.data.identifier);
+		} catch (e) {
+			error_msg.value = e.toString();
+		}
+	} else {
+		error_msg.value = "Please enter a username";
+	}
 }
+
 </script>
-
-<style scoped>
-
-</style>
+<template>
+	<div>
+		<div
+			class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+			<h1 class="h2">Login</h1>
+			<div class="btn-toolbar mb-2 mb-md-0">
+			</div>
+		</div>
+		<ErrorMsg v-if="error_msg" :msg="error_msg"></ErrorMsg>
+		<div class="row">
+			<div class="col-md-6">
+				<form @submit.prevent="login">
+					<div class="form-group">
+						<label for="username">Username</label>
+						<input type="text" class="form-control" id="username" v-model="username"
+							   placeholder="Enter username">
+					</div>
+					<br>
+					<button type="submit" class="btn btn-primary">Login</button>
+				</form>
+			</div>
+		</div>
+	</div>
+</template>

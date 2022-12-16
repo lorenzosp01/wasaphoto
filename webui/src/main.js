@@ -10,7 +10,11 @@ import './assets/main.css'
 
 const app = createApp(App)
 app.config.globalProperties.$axios = axios;
+app.provide('axios', app.config.globalProperties.$axios);
 app.component("ErrorMsg", ErrorMsg);
 app.component("LoadingSpinner", LoadingSpinner);
 app.use(router)
+app.provide('router', app.config.globalProperties.$router)
 app.mount('#app')
+
+export default app;
