@@ -5,7 +5,6 @@ const username = ref("");
 const error_msg = ref(null);
 const axios = inject("axios");
 const router = inject("router");
-const isLogged = ref(false);
 
 const emit = defineEmits(["login"]);
 
@@ -15,7 +14,8 @@ async function login() {
 			let response = await axios.post("/session", {
 				username: username.value,
 			})
-			router.push("/home");
+			localStorage.setItem('token', response.data.identifier);
+			router.push("/profile/" + response.data.identifier);
 			emit("login", response.data.identifier);
 		} catch (e) {
 			error_msg.value = e.toString();
