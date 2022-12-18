@@ -5,8 +5,4 @@ const instance = axios.create({
 	timeout: 1000 * 5
 });
 
-if (localStorage.getItem('token')) {
-	instance.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem('token')}`;
-}
-
 export default instance;

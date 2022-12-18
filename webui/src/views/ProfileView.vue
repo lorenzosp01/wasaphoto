@@ -1,11 +1,30 @@
 <script setup>
-import {inject, ref} from "vue";
+import {inject, onMounted, ref} from "vue";
 import LoginView from "@/views/LoginView.vue";
 
 const error_msg = ref(null);
+const axios = inject("axios");
+const router = inject("router");
 
 async function getMyProfile() {
+	const token = localStorage.getItem('token');
+	const offset = 0
+	const amount = 10
+	try {
+		let response = await axios.get(`/profiles/${token}`, {
+			params: {
+				offset: offset,
+				amount: amount
+			}
+		})
+	} catch (e) {
+		error_msg.value = e.toString();
+	}
 }
+
+onMounted(() => {
+	getMyProfile()
+})
 
 </script>
 <template>
