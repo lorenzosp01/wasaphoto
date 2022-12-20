@@ -1,6 +1,5 @@
 <script setup>
 import {inject, ref} from "vue";
-import instance from "@/services/axios";
 
 const username = ref("");
 const error_msg = ref(null);
@@ -14,8 +13,8 @@ async function login() {
 				username: username.value,
 			})
 			localStorage.setItem('token', response.data.identifier);
-			axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.identifier}`;
-			router.push("/profile/" + response.data.identifier);
+			axios.defaults.headers.common["Authorization"] = `Bearer ${localStorage.getItem('token')}`;
+			router.push("/profiles/" + response.data.identifier);
 		} catch (e) {
 			error_msg.value = e.toString();
 		}

@@ -1,12 +1,18 @@
 <script setup>
 import {RouterLink, RouterView} from 'vue-router'
-import {inject} from "vue";
+import {inject, onMounted} from "vue";
 
-const route = inject("route");
+const axios = inject("axios");
 
 const logout = () => {
 	localStorage.removeItem('token');
 }
+
+onMounted(() => {
+	if (localStorage.getItem('token')) {
+		axios.defaults.headers.common["Authorization"] = `Bearer ${localStorage.getItem('token')}`;
+	}
+})
 
 </script>
 

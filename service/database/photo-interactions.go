@@ -129,7 +129,8 @@ func (db *appdbimpl) GetPhotoComments(photo int64, photoOwner int64) ([]Comment,
 		joinParam := UserTable + ".id"
 		userColumn := "name"
 		commentColumn := CommentTable + ".id"
-		query := fmt.Sprintf("SELECT %s, owner, %s, content, created_at FROM %s, %s WHERE owner=%s AND photo=?", commentColumn, userColumn, CommentTable, UserTable, joinParam)
+		query := fmt.Sprintf("SELECT %s, owner, %s, content, created_at FROM %s, %s WHERE owner=%s AND photo=?"+
+			"ORDER BY created_at DESC", commentColumn, userColumn, CommentTable, UserTable, joinParam)
 		rows, err := db.c.Query(query, photo)
 
 		if err != nil {

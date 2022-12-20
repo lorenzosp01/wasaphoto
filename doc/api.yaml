@@ -45,7 +45,7 @@ components:
       content:
         text/plain:
           schema:
-            description:  Request body wrongly formatted
+            description: Request body wrongly formatted
             type: string
             example: Comment text is empty
     ObjectNotFoundError:
@@ -112,11 +112,11 @@ components:
       description: Pattern to search users
       required: true
       schema:
-          type: string
-          pattern: '^[a-zA-Z0-9_.]*$'
-          example: 'marc'
-          minLength: 3
-          maxLength: 16
+        type: string
+        pattern: '^[a-zA-Z0-9_.]*$'
+        example: 'marc'
+        minLength: 3
+        maxLength: 16
     user_id:
       schema:
         type: integer
@@ -176,29 +176,29 @@ components:
       maxLength: 16
     User:
       title: User
-      description:  A short description of the user entity
+      description: A short description of the user entity
       type: object
       properties:
         id:
           description: User identifier
           type: integer
           example: 1
-        username: {$ref: "#/components/schemas/Username"}
+        username: { $ref: "#/components/schemas/Username" }
     UserProfile:
       title: UserProfile
       description: A resume of user photo, followers and following
       type: object
       properties:
         user_info:
-          {$ref: "#/components/schemas/User"}
+          { $ref: "#/components/schemas/User" }
         photos:
           type: array
           description: User photos
-          items: {$ref: "#/components/schemas/Photo"}
+          items: { $ref: "#/components/schemas/Photo" }
           minItems: 0
           maxItems: 10
         profile_info:
-          {$ref: "#/components/schemas/ProfileInfo"}
+          { $ref: "#/components/schemas/ProfileInfo" }
     Uploaded_at:
       type: string
       format: date-time
@@ -221,9 +221,9 @@ components:
           type: integer
           example: 1
         uploaded_at:
-         { $ref: "#/components/schemas/Uploaded_at"}
+          { $ref: "#/components/schemas/Uploaded_at" }
         photoInfo:
-          {$ref: "#/components/schemas/PhotoInfo"}
+          { $ref: "#/components/schemas/PhotoInfo" }
         owner:
           { $ref: "#/components/schemas/User" }
     PhotoInfo:
@@ -269,9 +269,9 @@ components:
           minLength: 1
           maxLength: 100
           pattern: '^[ a-zA-Z0-9_.-]*'
-        owner:  {$ref: "#/components/schemas/User"}
+        owner: { $ref: "#/components/schemas/User" }
         uploaded_at:
-         { $ref: "#/components/schemas/Uploaded_at"}
+          { $ref: "#/components/schemas/Uploaded_at" }
     CommentWithoutDate:
       type: object
       description: Comment on a photo
@@ -342,31 +342,31 @@ components:
       properties:
         username: { $ref: "#/components/schemas/Username" }
     UsersList:
-        description: Object with the users list
-        type: object
-        properties:
-          users:
-            description: Users
-            type: array
-            items: { $ref: "#/components/schemas/User" }
-            minItems: 0
-            maxItems: 100
+      description: Object with the users list
+      type: object
+      properties:
+        users:
+          description: Users
+          type: array
+          items: { $ref: "#/components/schemas/User" }
+          minItems: 0
+          maxItems: 100
 paths:
   /session:
     post:
-      tags: ["login"]
-      summary:  Logs in the user
+      tags: [ "login" ]
+      summary: Logs in the user
       description: |-
         If the user does not exist, it will be created,
         and an identifier is returned.
         If the user exists, the user identifier is returned.
-      operationId:  doLogin
+      operationId: doLogin
       requestBody:
         description: User details
         content:
           application/json:
             schema:
-              {$ref: "#/components/schemas/UsernameObject"}
+              { $ref: "#/components/schemas/UsernameObject" }
         required: true
       responses:
         '201':
@@ -374,28 +374,28 @@ paths:
           content:
             application/json:
               schema:
-                {$ref: "#/components/schemas/UserIdentifier" }
+                { $ref: "#/components/schemas/UserIdentifier" }
         '400':
-          {$ref: "#/components/responses/BadRequest" }
+          { $ref: "#/components/responses/BadRequest" }
         '500':
-          { $ref: "#/components/responses/InternalServerError"}
+          { $ref: "#/components/responses/InternalServerError" }
 
   /search:
     get:
       parameters:
         - { $ref: "#/components/parameters/pattern" }
-      tags: ["search"]
-      summary:  Search users by pattern
+      tags: [ "search" ]
+      summary: Search users by pattern
       description:
         Search users by matching usernames with the given pattern or username
-      operationId:  doSearch
+      operationId: doSearch
       responses:
         "200":
           description: Search action successful
           content:
             application/json:
               schema:
-                {$ref: "#/components/schemas/UsersList" }
+                { $ref: "#/components/schemas/UsersList" }
         "400":
           { $ref: "#/components/responses/BadRequest" }
         "404":
@@ -403,7 +403,7 @@ paths:
         "500":
           { $ref: "#/components/responses/InternalServerError" }
       security:
-        - bearerAuth: []
+        - bearerAuth: [ ]
 
   /profiles/{user_id}:
     get:
@@ -465,7 +465,7 @@ paths:
         "403":
           { $ref: "#/components/responses/ForbiddenError" }
         "404":
-            { $ref: "#/components/responses/ObjectNotFoundError"}
+          { $ref: "#/components/responses/ObjectNotFoundError" }
         "500":
           { $ref: "#/components/responses/InternalServerError" }
       security:
@@ -475,13 +475,13 @@ paths:
     post:
       parameters:
         - { $ref: "#/components/parameters/user_id" }
-      tags: ["manage profile"]
+      tags: [ "manage profile" ]
       summary: Uploads a new photo to the authenticated user profile
       description: |-
         It adds a new photo to authenticated user profile, the uploaded photo identifier will be returned.
         If the request body is not formatted correctly, an error response will be returned.
         If who makes the request is not authenticated, an error response will be returned.
-      operationId:  uploadPhoto
+      operationId: uploadPhoto
       requestBody:
         content:
           multipart/form-data:
@@ -489,20 +489,20 @@ paths:
               description: Image object
               type: object
               properties:
-                image: {$ref: "#/components/schemas/Image"}
+                image: { $ref: "#/components/schemas/Image" }
       responses:
         "201":
-          {$ref: "#/components/responses/ObjectCreatedSuccessfully"}
+          { $ref: "#/components/responses/ObjectCreatedSuccessfully" }
         "400":
-          {$ref: "#/components/responses/BadRequest"}
+          { $ref: "#/components/responses/BadRequest" }
         "401":
-          {$ref: "#/components/responses/UnauthorizedError"}
+          { $ref: "#/components/responses/UnauthorizedError" }
         "403":
           { $ref: "#/components/responses/ForbiddenError" }
         "500":
           { $ref: "#/components/responses/InternalServerError" }
       security:
-        - bearerAuth: []
+        - bearerAuth: [ ]
 
   /profiles/{user_id}/photos/{photo_id}:
     parameters:
@@ -522,7 +522,7 @@ paths:
           content:
             image/png:
               schema:
-                  $ref: "#/components/schemas/Image"
+                $ref: "#/components/schemas/Image"
         "401":
           { $ref: "#/components/responses/UnauthorizedError" }
         "403":
@@ -534,7 +534,7 @@ paths:
       security:
         - bearerAuth: [ ]
     delete:
-      tags: ["manage profile"]
+      tags: [ "manage profile" ]
       summary: Deletes the photo of the authenticated user
       description: |-
         If a photo with the identifier in path belongs to the user
@@ -544,74 +544,74 @@ paths:
       operationId: deletePhoto
       responses:
         "200":
-          {$ref: "#/components/responses/ObjectDeletedSuccessfully"}
+          { $ref: "#/components/responses/ObjectDeletedSuccessfully" }
         "401":
-          {$ref: "#/components/responses/UnauthorizedError"}
+          { $ref: "#/components/responses/UnauthorizedError" }
         "403":
-          {$ref: "#/components/responses/ForbiddenError"}
+          { $ref: "#/components/responses/ForbiddenError" }
         "404":
-          {$ref: "#/components/responses/ObjectNotFoundError"}
+          { $ref: "#/components/responses/ObjectNotFoundError" }
         "500":
           { $ref: "#/components/responses/InternalServerError" }
       security:
-        - bearerAuth: []
+        - bearerAuth: [ ]
 
   /profiles/{auth_user_id}/following/{user_id}:
     parameters:
-      - {$ref: "#/components/parameters/user_id" }
-      - {$ref: "#/components/parameters/auth_user_id"}
+      - { $ref: "#/components/parameters/user_id" }
+      - { $ref: "#/components/parameters/auth_user_id" }
     put:
-      tags: ["users relations"]
-      summary:  Follows a user
+      tags: [ "users relations" ]
+      summary: Follows a user
       description: |-
         Follow the user with the user id given in the path if the user is authenticated.
         If the user id given belongs to a user already followed, an error response will be returned.
         If the user id given is not found, an error response will be returned.
         If who makes the request is not authenticated, an error response will be returned.
-      operationId:  followUser
+      operationId: followUser
       responses:
         "200":
-          {$ref: "#/components/responses/FollowingRelationChanged"}
+          { $ref: "#/components/responses/FollowingRelationChanged" }
         "401":
-          {$ref: "#/components/responses/UnauthorizedError"}
+          { $ref: "#/components/responses/UnauthorizedError" }
         "403":
           { $ref: "#/components/responses/ForbiddenError" }
         "404":
-          {$ref: "#/components/responses/ObjectNotFoundError"}
+          { $ref: "#/components/responses/ObjectNotFoundError" }
         "409":
-          {$ref: "#/components/responses/ConflictResourceStateError"}
+          { $ref: "#/components/responses/ConflictResourceStateError" }
         "500":
           { $ref: "#/components/responses/InternalServerError" }
       security:
-        - bearerAuth: []
+        - bearerAuth: [ ]
     delete:
-      tags: ["users relations"]
-      summary:  Unfollows a user
+      tags: [ "users relations" ]
+      summary: Unfollows a user
       description: |-
         Unfollow the user with the user_id specified in the path if the user is authenticated.
         If the user_id given is not found, an error response will be returned.
         If the user_id given belongs to a user not followed, an error response will be returned.
         If who makes the request is not authenticated, an error response will be returned.
-      operationId:  unfollowUser
+      operationId: unfollowUser
       responses:
         "200":
-          {$ref: "#/components/responses/FollowingRelationChanged"}
+          { $ref: "#/components/responses/FollowingRelationChanged" }
         "401":
-          {$ref: "#/components/responses/UnauthorizedError"}
+          { $ref: "#/components/responses/UnauthorizedError" }
         "403":
           { $ref: "#/components/responses/ForbiddenError" }
         "404":
-          {$ref: "#/components/responses/ObjectNotFoundError"}
+          { $ref: "#/components/responses/ObjectNotFoundError" }
         "409":
-          {$ref: "#/components/responses/ConflictResourceStateError"}
+          { $ref: "#/components/responses/ConflictResourceStateError" }
         "500":
           { $ref: "#/components/responses/InternalServerError" }
       security:
-        - bearerAuth: []
+        - bearerAuth: [ ]
 
   /profiles/{auth_user_id}/following/:
     parameters:
-      - {$ref: "#/components/parameters/auth_user_id"}
+      - { $ref: "#/components/parameters/auth_user_id" }
     get:
       tags: [ "users relations" ]
       summary: Gets followed users
@@ -637,80 +637,80 @@ paths:
 
   /profiles/{auth_user_id}/ban/{user_id}:
     parameters:
-      - {$ref: "#/components/parameters/user_id" }
-      - {$ref: "#/components/parameters/auth_user_id"}
+      - { $ref: "#/components/parameters/user_id" }
+      - { $ref: "#/components/parameters/auth_user_id" }
     put:
-      tags: ["users relations"]
-      summary:  Bans a user
+      tags: [ "users relations" ]
+      summary: Bans a user
       description: |-
         Ban the user with the user_id given in the path if the user is authenticated.
         If the user_id given is not found, an error response will be returned.
         If the user_id given belongs to a user already banned, an error response will be returned.
         If who makes the request is not authenticated, an error response will be returned.
-      operationId:  banUser
+      operationId: banUser
       responses:
         "200":
-          {$ref: "#/components/responses/UserBanStateChanged"}
+          { $ref: "#/components/responses/UserBanStateChanged" }
         "401":
-          {$ref: "#/components/responses/UnauthorizedError"}
+          { $ref: "#/components/responses/UnauthorizedError" }
         "403":
           { $ref: "#/components/responses/ForbiddenError" }
         "404":
-          {$ref: "#/components/responses/ObjectNotFoundError"}
+          { $ref: "#/components/responses/ObjectNotFoundError" }
         "409":
-          {$ref: "#/components/responses/ConflictResourceStateError"}
+          { $ref: "#/components/responses/ConflictResourceStateError" }
         "500":
           { $ref: "#/components/responses/InternalServerError" }
       security:
-        - bearerAuth: []
+        - bearerAuth: [ ]
     delete:
-      tags: ["users relations"]
-      summary:  Unbans a user
+      tags: [ "users relations" ]
+      summary: Unbans a user
       description: |-
         Unban the user with the user_id specified in the path if the user is authenticated.
         If the user_id given is not found, error will be returned.
         If the user_id given belongs to a user not banned, error will be returned.
         If who makes the request is not authenticated, an error response will be returned.
-      operationId:  unbanUser
+      operationId: unbanUser
       responses:
         "200":
-          {$ref: "#/components/responses/UserBanStateChanged"}
+          { $ref: "#/components/responses/UserBanStateChanged" }
         "401":
-          {$ref: "#/components/responses/UnauthorizedError"}
+          { $ref: "#/components/responses/UnauthorizedError" }
         "404":
-          {$ref: "#/components/responses/ObjectNotFoundError"}
+          { $ref: "#/components/responses/ObjectNotFoundError" }
         "409":
-          {$ref: "#/components/responses/ConflictResourceStateError"}
+          { $ref: "#/components/responses/ConflictResourceStateError" }
         "500":
           { $ref: "#/components/responses/InternalServerError" }
       security:
-        - bearerAuth: []
+        - bearerAuth: [ ]
 
   /profiles/{auth_user_id}/ban/:
     parameters:
-      - {$ref: "#/components/parameters/auth_user_id"}
+      - { $ref: "#/components/parameters/auth_user_id" }
     get:
-      tags: ["users relations"]
-      summary:  Gets banned users
+      tags: [ "users relations" ]
+      summary: Gets banned users
       description: |-
         Get the list of users banned by the authenticated user.
         If who makes the request is not authenticated, an error response will be returned.
-      operationId:  getBannedUsers
+      operationId: getBannedUsers
       responses:
         "200":
           description: List of the banned users
           content:
             application/json:
               schema:
-                {$ref: "#/components/schemas/BannedUsers"}
+                { $ref: "#/components/schemas/BannedUsers" }
         "401":
-          {$ref: "#/components/responses/UnauthorizedError"}
+          { $ref: "#/components/responses/UnauthorizedError" }
         "403":
-          {$ref: "#/components/responses/ForbiddenError"}
+          { $ref: "#/components/responses/ForbiddenError" }
         "500":
           { $ref: "#/components/responses/InternalServerError" }
       security:
-        - bearerAuth: []
+        - bearerAuth: [ ]
 
   /stream/{user_id}:
     get:
@@ -718,37 +718,37 @@ paths:
         - { $ref: "#/components/parameters/user_id" }
         - { $ref: "#/components/parameters/photoAmount" }
         - { $ref: "#/components/parameters/photoOffset" }
-      tags: ["stream"]
-      summary:  Gets authenticated user photos stream
+      tags: [ "stream" ]
+      summary: Gets authenticated user photos stream
       description: |-
         Return authenticated user' stream of photos (followed users ones) in
         reverse chronological order and additional information
         like updating date, and the number of comments and likes for each photo.
         If who makes the request is not authenticated, an error response will be returned.
-      operationId:  getMyStream
+      operationId: getMyStream
       responses:
         "200":
           description: "User stream"
           content:
             application/json:
               schema:
-                {$ref: "#/components/schemas/UserStream"}
+                { $ref: "#/components/schemas/UserStream" }
         "401":
-          {$ref: "#/components/responses/UnauthorizedError"}
+          { $ref: "#/components/responses/UnauthorizedError" }
         "403":
           { $ref: "#/components/responses/ForbiddenError" }
         "500":
           { $ref: "#/components/responses/InternalServerError" }
       security:
-        - bearerAuth: []
+        - bearerAuth: [ ]
 
   /profiles/{user_id}/photos/{photo_id}/likes/{auth_user_id}:
     parameters:
-      - {$ref: "#/components/parameters/photo_id"}
-      - {$ref: "#/components/parameters/user_id" }
-      - {$ref: "#/components/parameters/auth_user_id"}
+      - { $ref: "#/components/parameters/photo_id" }
+      - { $ref: "#/components/parameters/user_id" }
+      - { $ref: "#/components/parameters/auth_user_id" }
     put:
-      tags: ["photo interaction"]
+      tags: [ "photo interaction" ]
       summary: Adds a like to the photo
       description: |-
         If the photo with the id given in path exists, a user is authenticated, it adds a like.
@@ -758,22 +758,22 @@ paths:
       operationId: likePhoto
       responses:
         "200":
-          {$ref: "#/components/responses/ObjectCreatedSuccessfully"}
+          { $ref: "#/components/responses/ObjectCreatedSuccessfully" }
         "401":
-          {$ref: "#/components/responses/UnauthorizedError"}
+          { $ref: "#/components/responses/UnauthorizedError" }
         "403":
           { $ref: "#/components/responses/ForbiddenError" }
         "404":
-          {$ref: "#/components/responses/ObjectNotFoundError"}
+          { $ref: "#/components/responses/ObjectNotFoundError" }
         "409":
-          {$ref: "#/components/responses/ConflictResourceStateError"}
+          { $ref: "#/components/responses/ConflictResourceStateError" }
         "500":
           { $ref: "#/components/responses/InternalServerError" }
       security:
-        - bearerAuth: []
+        - bearerAuth: [ ]
     delete:
-      tags: ["photo interaction"]
-      summary:  Removes like from the photo
+      tags: [ "photo interaction" ]
+      summary: Removes like from the photo
       description: |-
         If the photo with the id given in path exists, the authenticated user added a like previously, it will be removed.
         If the photo exists and the authenticated user didn't add like to it, an error response will be returned.
@@ -782,27 +782,27 @@ paths:
       operationId: unlikePhoto
       responses:
         "200":
-          {$ref: "#/components/responses/ObjectDeletedSuccessfully"}
+          { $ref: "#/components/responses/ObjectDeletedSuccessfully" }
         "401":
-          {$ref: "#/components/responses/UnauthorizedError"}
+          { $ref: "#/components/responses/UnauthorizedError" }
         "403":
           { $ref: "#/components/responses/ForbiddenError" }
         "404":
-          {$ref: "#/components/responses/ObjectNotFoundError"}
+          { $ref: "#/components/responses/ObjectNotFoundError" }
         "409":
-          {$ref: "#/components/responses/ConflictResourceStateError"}
+          { $ref: "#/components/responses/ConflictResourceStateError" }
         "500":
           { $ref: "#/components/responses/InternalServerError" }
       security:
-        - bearerAuth: []
+        - bearerAuth: [ ]
 
   /profiles/{user_id}/photos/{photo_id}/comments/:
     parameters:
-      - {$ref: "#/components/parameters/photo_id"}
-      - {$ref: "#/components/parameters/user_id" }
+      - { $ref: "#/components/parameters/photo_id" }
+      - { $ref: "#/components/parameters/user_id" }
     get:
-      tags: ["photo interaction"]
-      summary:  Retrieves the photo's comments
+      tags: [ "photo interaction" ]
+      summary: Retrieves the photo's comments
       description: |-
         If the photo exists, retrieve its comments.
         If the photo doesn't exist, an error response will be returned.
@@ -813,18 +813,18 @@ paths:
           content:
             application/json:
               schema:
-                {$ref: "#/components/schemas/PhotoComments"}
+                { $ref: "#/components/schemas/PhotoComments" }
         "403":
           { $ref: "#/components/responses/ForbiddenError" }
         "404":
-          {$ref: "#/components/responses/ObjectNotFoundError"}
+          { $ref: "#/components/responses/ObjectNotFoundError" }
         "500":
           { $ref: "#/components/responses/InternalServerError" }
       security:
-        - bearerAuth: []
+        - bearerAuth: [ ]
     post:
-      tags: ["photo interaction"]
-      summary:  Adds a comment to the photo
+      tags: [ "photo interaction" ]
+      summary: Adds a comment to the photo
       description: |-
         If the photo exists, add a comment to it from the authenticated user.
         If who makes the request is not authenticated, an error response will be returned.
@@ -835,30 +835,30 @@ paths:
         content:
           application/json:
             schema:
-                {$ref: "#/components/schemas/CommentWithoutDate"}
+              { $ref: "#/components/schemas/CommentWithoutDate" }
       responses:
         "201":
-          {$ref: "#/components/responses/ObjectCreatedSuccessfully"}
+          { $ref: "#/components/responses/ObjectCreatedSuccessfully" }
         "400":
-          {$ref: "#/components/responses/BadRequest"}
+          { $ref: "#/components/responses/BadRequest" }
         "401":
-          {$ref: "#/components/responses/UnauthorizedError"}
+          { $ref: "#/components/responses/UnauthorizedError" }
         "403":
           { $ref: "#/components/responses/ForbiddenError" }
         "404":
-          {$ref: "#/components/responses/ObjectNotFoundError"}
+          { $ref: "#/components/responses/ObjectNotFoundError" }
         "500":
           { $ref: "#/components/responses/InternalServerError" }
       security:
-        - bearerAuth: []
+        - bearerAuth: [ ]
 
   /profiles/{user_id}/photos/{photo_id}/comments/{comment_id}:
     parameters:
       - { $ref: "#/components/parameters/photo_id" }
-      - { $ref: "#/components/parameters/comment_id"}
+      - { $ref: "#/components/parameters/comment_id" }
       - { $ref: "#/components/parameters/user_id" }
     delete:
-      tags: ["photo interaction"]
+      tags: [ "photo interaction" ]
       summary: Deletes a comment
       description: |-
         If the photo exists, the comment with the id given in the path belongs to the authenticated user, delete it.
@@ -867,11 +867,11 @@ paths:
       operationId: uncommentPhoto
       responses:
         "200":
-          {$ref: "#/components/responses/ObjectDeletedSuccessfully"}
+          { $ref: "#/components/responses/ObjectDeletedSuccessfully" }
         "401":
           { $ref: "#/components/responses/UnauthorizedError" }
         "403":
-          {$ref: "#/components/responses/ForbiddenError"}
+          { $ref: "#/components/responses/ForbiddenError" }
         "404":
           description: Comment not found
         "500":
