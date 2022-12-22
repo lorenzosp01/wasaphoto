@@ -1,8 +1,13 @@
 <script setup>
 import {RouterLink, RouterView} from 'vue-router'
-import {inject, onMounted} from "vue";
+import {inject, onMounted, ref} from "vue";
 
 const axios = inject("axios");
+const token = ref(null);
+
+const getAuthToken = () => {
+	token.value = localStorage.getItem("token")
+}
 
 const logout = () => {
 	localStorage.removeItem('token');
@@ -43,19 +48,19 @@ onMounted(() => {
 							</RouterLink>
 						</li>
 						<li class="nav-item">
-							<RouterLink to="/link1" class="nav-link">
+							<RouterLink to="/upload" class="nav-link">
 								<svg class="feather">
 									<use href="/feather-sprite-v4.29.0.svg#layout"/>
 								</svg>
-								Menu item 1
+								Upload photo
 							</RouterLink>
 						</li>
-						<li class="nav-item">
-							<RouterLink to="/link2" class="nav-link">
+						<li class="nav-item" v-if="token">
+							<RouterLink :to="`/profiles/${token}`" class="nav-link">
 								<svg class="feather">
-									<use href="/feather-sprite-v4.29.0.svg#key"/>
+									<use href="/feather-sprite-v4.29.0.svg#user"/>
 								</svg>
-								Menu item 2
+								Profile
 							</RouterLink>
 						</li>
 					</ul>
@@ -64,7 +69,7 @@ onMounted(() => {
 
 			<main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
 				<br>
-				<RouterView/>
+				<RouterView @login="getAuthToken"/>
 			</main>
 		</div>
 	</div>

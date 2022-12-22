@@ -5,6 +5,7 @@ const username = ref("");
 const error_msg = ref(null);
 const axios = inject("axios");
 const router = inject("router");
+const emit = defineEmits("login")
 
 async function login() {
 	if (username.value) {
@@ -14,7 +15,8 @@ async function login() {
 			})
 			localStorage.setItem('token', response.data.identifier);
 			axios.defaults.headers.common["Authorization"] = `Bearer ${localStorage.getItem('token')}`;
-			router.push("/profiles/" + response.data.identifier);
+			emit("login")
+			router.push(`/profiles/${response.data.identifier}`);
 		} catch (e) {
 			error_msg.value = e.toString();
 		}
