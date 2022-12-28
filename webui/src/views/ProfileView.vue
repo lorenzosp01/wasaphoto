@@ -11,6 +11,8 @@ const userId = ref(null);
 const token = localStorage.getItem("token");
 const followersList = ref([]);
 const bannedList = ref([]);
+const username = ref("")
+const isEditingName = ref(false)
 
 async function getUserProfile() {
 	const offset = 0
@@ -24,8 +26,18 @@ async function getUserProfile() {
 		})
 		error_msg.value = null
 		userProfile.value = response.data
+		username.value = userProfile.value.user_info.username
 	} catch (e) {
-		error_msg.value = e.toString();
+		switch (e.response.status) {
+			case 404:
+				error_msg.value = "User not found"
+				break
+			case 403:
+				error_msg.value = "You are not allowed to see this profile"
+				break
+			default:
+				error_msg.value = e.toString()
+		}
 	}
 }
 
@@ -35,6 +47,7 @@ async function getUserFollowers() {
 			followersList.value = response.data.users.map((user) => {
 				return user.id
 			})
+			error_msg.value = null
 		})
 		.catch((e) => {
 			if (e.response.status !== 404) {
@@ -51,6 +64,7 @@ async function getUserBannedList() {
 			bannedList.value = response.data.users.map((user) => {
 				return user.id
 			})
+			error_msg.value = null
 		})
 		.catch((e) => {
 			if (e.response.status !== 404) {
@@ -61,7 +75,7 @@ async function getUserBannedList() {
 		})
 }
 
-async function banUser () {
+async function banUser() {
 	axios.put(`/profiles/${token}/ban/${userId.value}`)
 		.then(() => {
 			getUserBannedList()
@@ -71,7 +85,7 @@ async function banUser () {
 		})
 }
 
-async function unbanUser () {
+async function unbanUser() {
 	axios.delete(`/profiles/${token}/ban/${userId.value}`)
 		.then(() => {
 			getUserBannedList()
@@ -81,7 +95,7 @@ async function unbanUser () {
 		})
 }
 
-async function followUser () {
+async function followUser() {
 	axios.put(`/profiles/${token}/following/${userId.value}`)
 		.then(() => {
 			getUserFollowers()
@@ -91,7 +105,7 @@ async function followUser () {
 		})
 }
 
-async function unfollowUser () {
+async function unfollowUser() {
 	axios.delete(`/profiles/${token}/following/${userId.value}`)
 		.then(() => {
 			getUserFollowers()
@@ -99,6 +113,22 @@ async function unfollowUser () {
 		.catch((e) => {
 			error_msg.value = e.toString();
 		})
+}
+
+async function editName() {
+	if (username.value !== userProfile.value.user_info.username) {
+		axios.put(`/profiles/${token}/name`, {
+			username: username.value
+		}).then(() => {
+			isEditingName.value = false
+		}).catch((e) => {
+			if (e.response.status === 409) {
+				error_msg.value = "Someone else is using this username"
+			} else {
+				error_msg.value = e.toString();
+			}
+		})
+	}
 }
 
 onBeforeRouteUpdate((to, from) => {
@@ -118,14 +148,28 @@ onMounted(() => {
 </script>
 <template>
 	<LoadingSpinner v-if="!userProfile"></LoadingSpinner>
-	<div v-if="userProfile">
-		<div class="text-center">
-			<h1 class="h1">{{ userProfile.user_info.username }}'s profile</h1>
-			<hr>
+	<ErrorMsg v-if="error_msg" :msg="error_msg"></ErrorMsg>
+	<div v-if="userProfile" class="h-100">
+		<div class="d-flex justify-content-center align-items-center">
+			<div class="h1 align-items-center" v-if="!isEditingName">{{ username }}</div>
+			<input v-else type="text" class="form-control w-25" v-model="username">
+			<div v-if="isEditingName" @click="editName" class="btn btn-sm btn-primary mx-2 align-text-bottom">Conferma</div>
+			<div v-if="token === userId" class="mx-2" @click="isEditingName=!isEditingName">
+				<svg class="feather">
+					<use href="/feather-sprite-v4.29.0.svg#edit"/>
+				</svg>
+			</div>
+			<div v-if="token !== userId">
+				<div v-if="followersList.includes(parseInt(userId))" class="btn btn-danger mx-2" @click="unfollowUser">
+					Unfollow
+				</div>
+				<div v-else class="btn btn-primary mx-2" @click="followUser">Follow</div>
+				<div v-if="bannedList.includes(parseInt(userId))" class="btn btn-danger ms-2" @click="unbanUser">Unban</div>
+				<div v-else class="btn btn-primary ms-2" @click="banUser">Ban</div>
+			</div>
 		</div>
-		<ErrorMsg v-if="error_msg" :msg="error_msg"></ErrorMsg>
+		<hr>
 		<div class="pt-3">
-
 			<div class="d-flex justify-content-around">
 				<div class="">
 					<h1 class="h4"> Photos </h1>
@@ -140,14 +184,10 @@ onMounted(() => {
 					<div class="fs-5 text-center">{{ userProfile.profileInfo.followersCounter }}</div>
 				</div>
 			</div>
-			<div v-if="token !== userId " class="w-100 d-flex justify-content-center">
-				<div v-if="followersList.includes(parseInt(userId))" class="btn btn-danger" @click="unfollowUser">Unfollow</div>
-				<div v-else class="btn btn-primary" @click="followUser">Follow</div>
-				<div v-if="bannedList.includes(parseInt(userId))" class="btn btn-danger" @click="unbanUser">Unban</div>
-				<div v-else class="btn btn-primary " @click="banUser">Ban</div>
-			</div>
+
 			<div class="row row-cols-1 row-cols-md-3 px-5 pt-5">
-				<Post v-for="photo in userProfile.photos" @delete-photo="getUserProfile" :userId="userProfile.user_info.id" :photo="photo"/>
+				<Post v-for="photo in userProfile.photos" @delete-photo="getUserProfile"
+					  :userId="userProfile.user_info.id" :photo="photo"/>
 			</div>
 		</div>
 	</div>

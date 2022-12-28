@@ -48,6 +48,7 @@ type AppDatabase interface {
 	ChangeUsername(int64, string) DbError
 	DeletePhoto(int64, int64) DbError
 	GetUserProfile(int64, int64, int64) (UserProfile, DbError)
+	GetMyStream(int64, int64, int64) ([]Photo, DbError)
 	GetUserPhotos(int64, int64, int64) ([]Photo, DbError)
 	getProfileCounters(int64) (ProfileCounters, DbError)
 	TargetUser(int64, int64, string) DbError

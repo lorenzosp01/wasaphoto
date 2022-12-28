@@ -15,6 +15,7 @@ const logout = () => {
 
 onMounted(() => {
 	if (localStorage.getItem('token')) {
+		token.value = localStorage.getItem("token")
 		axios.defaults.headers.common["Authorization"] = `Bearer ${localStorage.getItem('token')}`;
 	}
 })
@@ -42,7 +43,7 @@ onMounted(() => {
 						<li class="nav-item">
 							<RouterLink to="/login" @click='logout' class="nav-link">
 								<svg class="feather">
-									<use href="/feather-sprite-v4.29.0.svg#home"/>
+									<use href="/feather-sprite-v4.29.0.svg#log-out"/>
 								</svg>
 								Logout
 							</RouterLink>
@@ -61,6 +62,22 @@ onMounted(() => {
 									<use href="/feather-sprite-v4.29.0.svg#user"/>
 								</svg>
 								Profile
+							</RouterLink>
+						</li>
+						<li class="nav-item">
+							<RouterLink :to="`/`" class="nav-link">
+								<svg class="feather">
+									<use href="/feather-sprite-v4.29.0.svg#home"/>
+								</svg>
+								Home
+							</RouterLink>
+						</li>
+						<li class="nav-item">
+							<RouterLink :to="`/search`" class="nav-link">
+								<svg class="feather">
+									<use href="/feather-sprite-v4.29.0.svg#search"/>
+								</svg>
+								Search users
 							</RouterLink>
 						</li>
 					</ul>

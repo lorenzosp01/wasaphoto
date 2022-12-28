@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"wasaphoto/service/database"
+	"wasaphoto/service/utils"
 )
 
 func (rt *_router) doSearch(w http.ResponseWriter, r *http.Request, params map[string]int64) {
@@ -28,6 +29,12 @@ func (rt *_router) doSearch(w http.ResponseWriter, r *http.Request, params map[s
 			}
 			users = append(users, user)
 		}
+	}
+
+	if len(users) == 0 {
+		httpErr := utils.HttpError{StatusCode: 404, Message: "No users found"}
+		rt.LoggerAndHttpErrorSender(w, nil, httpErr)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")

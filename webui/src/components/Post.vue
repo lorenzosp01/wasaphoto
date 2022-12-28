@@ -7,7 +7,10 @@ const props = defineProps({
 	},
 	userId: {
 		type: Number,
-	}
+	},
+	showOwner: {
+		type: Boolean,
+	},
 });
 
 const tempPhoto = ref(props.photo);
@@ -112,9 +115,14 @@ onMounted(() => {
 </script>
 
 <template>
-	<div v-if="imgUrl" class="col mb-4">
+	<div v-if="imgUrl" class="col mb-5">
 		<ErrorMsg v-if="error_msg" :msg="error_msg"></ErrorMsg>
 		<div class="card">
+			<div v-if="showOwner" class="card-header">
+				<RouterLink :to="`/profiles/${tempPhoto.owner.id}`">
+					<div class="fw-bold">{{tempPhoto.owner.username}}</div>
+				</RouterLink>
+			</div>
 			<img :src="imgUrl" class="card-img-top" alt="...">
 			<div class="card-body">
 				<div class="btn" @click="likePhoto">

@@ -33,7 +33,7 @@ func (rt *_router) getImage(w http.ResponseWriter, r *http.Request, params map[s
 	authUserId := params["token"]
 	userId := params["user_id"]
 
-	userIsBanned, dbErr := rt.db.IsUserTargeted(authUserId, userId, database.BanTable)
+	userIsBanned, dbErr := rt.db.IsUserTargeted(userId, authUserId, database.BanTable)
 	if userIsBanned {
 		dbErr.CustomMessage = utils.BannedMessage
 		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
@@ -83,6 +83,7 @@ func (rt *_router) setMyUsername(w http.ResponseWriter, r *http.Request, params 
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
 	_ = json.NewEncoder(w).Encode(user)
 }
 

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/mattn/go-sqlite3"
 )
 
 func (db *appdbimpl) InsertPhoto(image []byte, ownerId int64) DbError {
@@ -46,8 +47,16 @@ func (db *appdbimpl) ChangeUsername(id int64, newUsername string) DbError {
 	var dbErr DbError
 
 	if err != nil {
+		var sqlErr sqlite3.Error
 		dbErr.InternalError = err
-		dbErr.Code = GenericError
+		if errors.As(err, &sqlErr) {
+			if errors.Is(sqlErr.ExtendedCode, sqlite3.ErrConstraintUnique) {
+				dbErr.Code = EntityAlreadyExists
+				dbErr.CustomMessage = "Someone already owns that name"
+			} else {
+				dbErr.Code = GenericError
+			}
+		}
 	}
 
 	return dbErr
@@ -103,7 +112,6 @@ func (db *appdbimpl) GetUserProfile(id int64, photosAmount int64, photosOffset i
 }
 
 func (db *appdbimpl) GetUserPhotos(id int64, amount int64, offset int64) ([]Photo, DbError) {
-	// Per ogni foto
 	var dbErr DbError
 	joinParam := UserTable + ".id"
 	userColumn := "name"
@@ -147,13 +155,16 @@ func (db *appdbimpl) GetUserPhotos(id int64, amount int64, offset int64) ([]Phot
 		}
 
 		photos = append(photos, photo)
-		amount--
 	}
 
 	err = rows.Err()
 	if err != nil {
 		dbErr.Code = GenericError
 		dbErr.InternalError = err
+	}
+
+	if len(photos) == 0 {
+		dbErr.Code = NotFound
 	}
 
 	defer rows.Close()
