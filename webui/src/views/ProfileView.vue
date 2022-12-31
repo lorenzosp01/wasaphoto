@@ -41,7 +41,7 @@ async function getUserProfile() {
 	}
 }
 
-async function getUserFollowers() {
+async function getUserFollowed() {
 	axios.get(`/profiles/${token}/following/`)
 		.then((response) => {
 			followersList.value = response.data.users.map((user) => {
@@ -98,7 +98,8 @@ async function unbanUser() {
 async function followUser() {
 	axios.put(`/profiles/${token}/following/${userId.value}`)
 		.then(() => {
-			getUserFollowers()
+			getUserFollowed()
+			getUserProfile()
 		})
 		.catch((e) => {
 			error_msg.value = e.toString();
@@ -108,7 +109,8 @@ async function followUser() {
 async function unfollowUser() {
 	axios.delete(`/profiles/${token}/following/${userId.value}`)
 		.then(() => {
-			getUserFollowers()
+			getUserFollowed()
+			getUserProfile()
 		})
 		.catch((e) => {
 			error_msg.value = e.toString();
@@ -134,14 +136,14 @@ async function editName() {
 onBeforeRouteUpdate((to, from) => {
 	userId.value = to.params.id
 	getUserProfile()
-	getUserFollowers()
+	getUserFollowed()
 	getUserBannedList()
 })
 
 onMounted(() => {
 	userId.value = router.currentRoute.value.params.id
 	getUserProfile()
-	getUserFollowers()
+	getUserFollowed()
 	getUserBannedList()
 })
 
@@ -186,7 +188,7 @@ onMounted(() => {
 			</div>
 
 			<div class="row row-cols-1 row-cols-md-3 px-5 pt-5">
-				<Post v-for="photo in userProfile.photos" @delete-photo="getUserProfile"
+				<Post v-for="photo in userProfile.photos" :key="photo.id" @delete-photo="getUserProfile "
 					  :userId="userProfile.user_info.id" :photo="photo"/>
 			</div>
 		</div>

@@ -1,5 +1,5 @@
 <script setup>
-import {inject, onMounted, ref} from "vue";
+import {inject, onMounted, ref, watch} from "vue";
 
 const props = defineProps({
 	photo: {
@@ -25,8 +25,7 @@ const showComments = ref(false);
 
 async function getPhoto() {
 	try {
-		console.log(props.photo)
-		let response = await axios.get(`/profiles/${props.userId}/photos/${props.photo.id}`, {responseType: 'blob'})
+		let response = await axios.get(`/profiles/${props.userId}/photos/${tempPhoto.value.id}`, {responseType: 'blob'})
 		imgUrl.value = URL.createObjectURL(response.data)
 	} catch (e) {
 		error_msg.value = e.toString();
@@ -72,7 +71,6 @@ async function likePhoto() {
 		})
 }
 
-
 async function deleteComment(commentId) {
 	axios.delete(`/profiles/${props.userId}/photos/${props.photo.id}/comments/${commentId}`)
 		.then(() => {
@@ -107,10 +105,9 @@ async function commentPhoto() {
 }
 
 onMounted(() => {
-	console.log(parseInt(token), )
 	getPhoto()
 	getPhotoComments()
-})
+});
 
 </script>
 
@@ -139,7 +136,7 @@ onMounted(() => {
 				</div>
 				<div v-if="showComments" class="overflow-auto pt-3"
 					 style="max-height: 30vh">
-					<div v-for='comment in photoComments' class="border border-secondary bg-white rounded-1 mb-2 mx-2 px-2 py-1">
+					<div v-for='comment in photoComments' :key="comment.id" class="border border-secondary bg-white rounded-1 mb-2 mx-2 px-2 py-1">
 						<div class="d-flex justify-content-between">
 							<h6> {{ comment.owner.username }} </h6>
 							<small class="text-muted">{{ comment.uploadedAt }}</small>
@@ -164,7 +161,6 @@ onMounted(() => {
 					<div>
 						Uploaded time: {{ props.photo.uploadedAt }}
 					</div>
-
 				</div>
 				<div v-if="parseInt(token) === props.photo.owner.id" class="btn btn-sm btn-danger" @click="deletePhoto">
 					<svg class="feather">

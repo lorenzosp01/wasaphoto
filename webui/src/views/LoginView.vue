@@ -17,7 +17,9 @@ async function login() {
 			localStorage.setItem('token', response.data.identifier);
 			axios.defaults.headers.common["Authorization"] = `Bearer ${localStorage.getItem('token')}`;
 			emit("login")
-			router.push(`/profiles/${response.data.identifier}`);
+			if (response.data.identifier !== 0) {
+				router.push(`/profiles/${response.data.identifier}`);
+			}
 		} catch (e) {
 			error_msg.value = e.toString();
 		}

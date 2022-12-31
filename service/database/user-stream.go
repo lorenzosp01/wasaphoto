@@ -40,6 +40,12 @@ func (db *appdbimpl) GetMyStream(userId int64, offset int64, amount int64) ([]Ph
 
 			photos = append(photos, photo)
 		}
+
+		if rows.Err() != nil {
+			dbErr.Code = GenericError
+			dbErr.InternalError = err
+			return nil, dbErr
+		}
 	}
 
 	defer rows.Close()

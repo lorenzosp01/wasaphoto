@@ -50,7 +50,7 @@ async function searchUsers() {
 		</div>
 		<div class="w-auto row justify-content-center">
 			<div v-if="users" class="flex flex-column justify-content-center pt-5" style="width: 30%;">
-				<div v-for="user in users"  class="col mb-5">
+				<div v-for="user in users" :key="user.id" class="col mb-5">
 					<ErrorMsg v-if="error_msg" :msg="error_msg"></ErrorMsg>
 					<div class="card">
 						<div class="card-body">

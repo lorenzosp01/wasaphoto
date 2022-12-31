@@ -29,11 +29,9 @@ async function getStream() {
 }
 
 const changeQueryParams =  (e) => {
-	if (window.scrollY + window.innerHeight >= document.body.scrollHeight) {
-		if (error_msg.value === null) {
-			offset.value += amount.value
-			getStream()
-		}
+	if (window.scrollY + window.innerHeight >= document.body.scrollHeight && stream.value.length > 0) {
+		offset.value += amount.value
+		getStream()
 	}
 }
 
