@@ -78,7 +78,7 @@ async function getUserBannedList() {
 async function banUser() {
 	axios.put(`/profiles/${token}/ban/${userId.value}`)
 		.then(() => {
-			getUserBannedList()
+			bannedList.value.push(parseInt(userId.value))
 		})
 		.catch((e) => {
 			error_msg.value = e.toString();
@@ -88,7 +88,9 @@ async function banUser() {
 async function unbanUser() {
 	axios.delete(`/profiles/${token}/ban/${userId.value}`)
 		.then(() => {
-			getUserBannedList()
+			bannedList.value = bannedList.value.filter((id) => {
+				return id !== parseInt(userId.value)
+			})
 		})
 		.catch((e) => {
 			error_msg.value = e.toString();
@@ -98,8 +100,8 @@ async function unbanUser() {
 async function followUser() {
 	axios.put(`/profiles/${token}/following/${userId.value}`)
 		.then(() => {
-			getUserFollowed()
-			getUserProfile()
+			userProfile.value.profileInfo.followingCounter++
+			followersList.value.push(parseInt(userId.value))
 		})
 		.catch((e) => {
 			error_msg.value = e.toString();
@@ -109,8 +111,10 @@ async function followUser() {
 async function unfollowUser() {
 	axios.delete(`/profiles/${token}/following/${userId.value}`)
 		.then(() => {
-			getUserFollowed()
-			getUserProfile()
+			userProfile.value.profileInfo.followingCounter--
+			followersList.value = followersList.value.filter((id) => {
+				return id !== parseInt(userId.value)
+			})
 		})
 		.catch((e) => {
 			error_msg.value = e.toString();
@@ -149,7 +153,6 @@ onMounted(() => {
 
 </script>
 <template>
-	<LoadingSpinner v-if="!userProfile"></LoadingSpinner>
 	<ErrorMsg v-if="error_msg" :msg="error_msg"></ErrorMsg>
 	<div v-if="userProfile" class="h-100">
 		<div class="d-flex justify-content-center align-items-center">

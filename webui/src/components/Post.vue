@@ -74,11 +74,10 @@ async function likePhoto() {
 async function deleteComment(commentId) {
 	axios.delete(`/profiles/${props.userId}/photos/${props.photo.id}/comments/${commentId}`)
 		.then(() => {
-			getPhotoComments().then(() => {
-				tempPhoto.value.photoInfo.commentsCounter -= 1
-			}).catch((e) => {
-				error_msg.value = e.toString();
+			photoComments.value = photoComments.value.filter((comment) => {
+				return comment.id !== commentId
 			})
+			tempPhoto.value.photoInfo.commentsCounter -= 1
 		})
 		.catch((e) => {
 			error_msg.value = e.toString();
@@ -93,6 +92,7 @@ async function commentPhoto() {
 			getPhotoComments().then(() => {
 				tempPhoto.value.photoInfo.commentsCounter += 1
 				newComment.value = ""
+				showComments.value = !showComments.value
 			}).catch(e => {
 				error_msg.value = e.toString();
 			})

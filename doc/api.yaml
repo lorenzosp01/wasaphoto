@@ -272,14 +272,10 @@ components:
         owner: { $ref: "#/components/schemas/User" }
         uploaded_at:
           { $ref: "#/components/schemas/Uploaded_at" }
-    CommentWithoutDate:
+    CommentPlain:
       type: object
       description: Comment on a photo
       properties:
-        id:
-          description: Comment identifier
-          type: integer
-          example: 1
         text:
           type: string
           description: Content of the comment
@@ -287,7 +283,6 @@ components:
           minLength: 1
           maxLength: 100
           pattern: '^[ a-zA-Z0-9_.-]*'
-        owner: { $ref: "#/components/schemas/User" }
     PhotoComments:
       description: Object with photo comments
       type: object
@@ -835,7 +830,7 @@ paths:
         content:
           application/json:
             schema:
-              { $ref: "#/components/schemas/CommentWithoutDate" }
+              { $ref: "#/components/schemas/CommentPlain" }
       responses:
         "201":
           { $ref: "#/components/responses/ObjectCreatedSuccessfully" }
