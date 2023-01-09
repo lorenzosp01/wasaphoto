@@ -13,7 +13,7 @@ func (rt *_router) getMyStream(w http.ResponseWriter, r *http.Request, params ma
 	var photos []Photo
 
 	// todo implementare meglio la restituzione dello stream
-	dbPhotos, dbErr := rt.db.GetMyStream(authUserId, params["amount"], params["offset"])
+	dbPhotos, dbErr := rt.db.GetMyStream(authUserId, params["offset"], params["amount"])
 	if dbErr.InternalError != nil {
 		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return

@@ -8,14 +8,16 @@ const router = inject("router");
 const token = localStorage.getItem("token");
 const stream = ref([]);
 const error_msg = ref(null);
-const offset = ref(0);
-const amount = ref(10);
+
+let offset = 0
+let amount = 10
+let wantsMorePhotos = true
 
 async function getStream() {
 	axios.get(`/stream/${token}`, {
 		params: {
-			offset: offset.value,
-			amount: amount.value
+			offset: offset,
+			amount: amount
 		}
 	}).then((response) => {
 		for (let i = 0; i < response.data.photos.length; i++) {
@@ -24,25 +26,26 @@ async function getStream() {
 	}).catch((e) => {
 		if (e.response.status !== 404) {
 			error_msg.value = e.toString();
+		} else {
+			wantsMorePhotos = false
 		}
 	})
 }
 
-const changeQueryParams =  (e) => {
-	if (window.scrollY + window.innerHeight >= document.body.scrollHeight && stream.value.length > 0) {
-		offset.value += amount.value
+const getMorePhotos =  (e) => {
+	if (window.scrollY + window.innerHeight >= document.body.scrollHeight && wantsMorePhotos) {
+		offset += amount
 		getStream()
 	}
 }
 
 onMounted(() => {
-	window.addEventListener("scroll", changeQueryParams)
+	window.addEventListener("scroll", getMorePhotos)
 	getStream()
-	console.log(stream.value)
 })
 
 onBeforeUnmount(() => {
-	window.removeEventListener("scroll", changeQueryParams)
+	window.removeEventListener("scroll", getMorePhotos)
 })
 
 </script>
@@ -57,7 +60,7 @@ onBeforeUnmount(() => {
 		</div>
 		<ErrorMsg v-if="error_msg" :msg="error_msg"></ErrorMsg>
 		<div class="w-auto row justify-content-center ">
-			<div v-if="stream.length > 0" class="flex flex-column justify-content-center pt-5"  @scroll="console.log('scrolling')" style="width: 30%;">
+			<div v-if="stream.length > 0" class="flex flex-column justify-content-center pt-5" style="width: 30%;">
 				<Post v-for="photo in stream" :key="photo.id" :photo="photo" :showOwner="true" :userId="photo.owner.id"></Post>
 			</div>
 			<div v-else class="d-flex flex-column">

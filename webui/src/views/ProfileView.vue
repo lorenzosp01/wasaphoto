@@ -13,10 +13,14 @@ const followersList = ref([]);
 const bannedList = ref([]);
 const username = ref("")
 const isEditingName = ref(false)
+const emit = defineEmits(["login"]);
+const photos = ref([])
+
+let amount = 10
+let offset = 0
+let wantsMorePhotos = true
 
 async function getUserProfile() {
-	const offset = 0
-	const amount = 10
 	try {
 		let response = await axios.get(`/profiles/${userId.value}`, {
 			params: {
@@ -26,7 +30,13 @@ async function getUserProfile() {
 		})
 		error_msg.value = null
 		userProfile.value = response.data
+		wantsMorePhotos = (userProfile.value.photos !== null)
 		username.value = userProfile.value.user_info.username
+		if (wantsMorePhotos) {
+			userProfile.value.photos.forEach(photo => {
+				photos.value.push(photo)
+			})
+		}
 	} catch (e) {
 		switch (e.response.status) {
 			case 404:
@@ -137,8 +147,19 @@ async function editName() {
 	}
 }
 
+const getMorePhotos =  (e) => {
+	if (window.scrollY + window.innerHeight >= document.body.scrollHeight && wantsMorePhotos) {
+		offset += amount
+		getUserProfile()
+	}
+}
+
+
 onBeforeRouteUpdate((to, from) => {
 	userId.value = to.params.id
+	photos.value = []
+	offset = 0
+	amount = 10
 	getUserProfile()
 	getUserFollowed()
 	getUserBannedList()
@@ -146,6 +167,7 @@ onBeforeRouteUpdate((to, from) => {
 
 onMounted(() => {
 	userId.value = router.currentRoute.value.params.id
+	window.addEventListener("scroll", getMorePhotos)
 	getUserProfile()
 	getUserFollowed()
 	getUserBannedList()
@@ -191,7 +213,7 @@ onMounted(() => {
 			</div>
 
 			<div class="row row-cols-1 row-cols-md-3 px-5 pt-5">
-				<Post v-for="photo in userProfile.photos" :key="photo.id" @delete-photo="getUserProfile "
+				<Post v-for="photo in photos" :key="photo.id" @delete-photo="getUserProfile "
 					  :userId="userProfile.user_info.id" :photo="photo"/>
 			</div>
 		</div>

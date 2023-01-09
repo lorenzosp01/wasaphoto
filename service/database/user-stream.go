@@ -10,7 +10,7 @@ func (db *appdbimpl) GetMyStream(userId int64, offset int64, amount int64) ([]Ph
 	var dbErr DbError
 
 	query := fmt.Sprintf("SELECT Photo.id, User.name, owner, uploaded_at FROM %s, %s WHERE owner=User.id AND"+
-		" owner IN (SELECT following FROM %s WHERE follower=%d) ORDER BY uploaded_at DESC LIMIT ? OFFSET ?", PhotoTable, UserTable, FollowTable, userId)
+		" owner IN (SELECT following FROM %s WHERE follower=?) ORDER BY uploaded_at DESC LIMIT ? OFFSET ?", PhotoTable, UserTable, FollowTable)
 	rows, err := db.c.Query(query, userId, amount, offset)
 
 	var photos []Photo

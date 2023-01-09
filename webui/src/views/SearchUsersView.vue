@@ -42,7 +42,7 @@ async function searchUsers() {
 			<div class="form-outline mx-2" style="width: 26%; ">
 				<input type="text" v-model="pattern" @input="searchUsers" class="form-control"  placeholder="Search users"/>
 			</div>
-			<div class="btn btn-primary">
+			<div class="btn btn-primary" @click="searchUsers">
 				<svg class="feather">
 					<use href="/feather-sprite-v4.29.0.svg#search"/>
 				</svg>
@@ -67,9 +67,7 @@ async function searchUsers() {
 							</div>
 						</div>
 					</div>
-
 				</div>
-
 			</div>
 		</div>
 	</div>
