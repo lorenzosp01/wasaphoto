@@ -9,10 +9,9 @@ const emit = defineEmits(["login"])
 
 async function login() {
 	if (username.value) {
-		try {
-			let response = await axios.post("/session", {
-				username: username.value,
-			})
+	 	axios.post("/session", {
+			username: username.value,
+		}).then((response)=> {
 			localStorage.clear()
 			localStorage.setItem('token', response.data.identifier);
 			axios.defaults.headers.common["Authorization"] = `Bearer ${localStorage.getItem('token')}`;
@@ -20,9 +19,9 @@ async function login() {
 			if (response.data.identifier !== 0) {
 				router.push(`/profiles/${response.data.identifier}`);
 			}
-		} catch (e) {
-			error_msg.value = e.toString();
-		}
+		}).catch((e) => {
+			error_msg.value = e.toString()
+		})
 	} else {
 		error_msg.value = "Please enter a username";
 	}

@@ -21,23 +21,21 @@ let offset = 0
 let wantsMorePhotos = true
 
 async function getUserProfile() {
-	try {
-		let response = await axios.get(`/profiles/${userId.value}`, {
-			params: {
-				offset: offset,
-				amount: amount
-			}
-		})
-		error_msg.value = null
+	axios.get(`/profiles/${userId.value}`, {
+		params: {
+			offset: offset,
+			amount: amount
+		}
+	}).then((response) => {
 		userProfile.value = response.data
 		wantsMorePhotos = (userProfile.value.photos !== null)
-		username.value = userProfile.value.user_info.username
 		if (wantsMorePhotos) {
 			userProfile.value.photos.forEach(photo => {
 				photos.value.push(photo)
 			})
 		}
-	} catch (e) {
+		username.value = userProfile.value.user_info.username
+	}).catch((e) => {
 		switch (e.response.status) {
 			case 404:
 				error_msg.value = "User not found"
@@ -48,7 +46,8 @@ async function getUserProfile() {
 			default:
 				error_msg.value = e.toString()
 		}
-	}
+	})
+
 }
 
 async function getUserFollowed() {

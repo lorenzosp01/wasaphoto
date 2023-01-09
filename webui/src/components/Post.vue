@@ -24,12 +24,12 @@ const newComment = ref("");
 const showComments = ref(false);
 
 async function getPhoto() {
-	try {
-		let response = await axios.get(`/profiles/${props.userId}/photos/${tempPhoto.value.id}`, {responseType: 'blob'})
-		imgUrl.value = URL.createObjectURL(response.data)
-	} catch (e) {
-		error_msg.value = e.toString();
-	}
+	axios.get(`/profiles/${props.userId}/photos/${tempPhoto.value.id}`, {responseType: 'blob'})
+		.then((response) => {
+			imgUrl.value = URL.createObjectURL(response.data);
+		}).catch((e) => {
+			error_msg.value = e.toString();
+		})
 }
 
 async function deletePhoto() {
@@ -43,12 +43,13 @@ async function deletePhoto() {
 }
 
 async function getPhotoComments() {
-	try {
-		let response = await axios.get(`/profiles/${props.userId}/photos/${props.photo.id}/comments/`)
-		photoComments.value = response.data.comments
-	} catch (e) {
-		error_msg.value = e.toString();
-	}
+	axios.get(`/profiles/${props.userId}/photos/${props.photo.id}/comments/`)
+		.then((response) => {
+			photoComments.value = response.data.comments
+		})
+		.catch((e) => {
+			error_msg.value = e.toString();
+		})
 }
 
 async function likePhoto() {
