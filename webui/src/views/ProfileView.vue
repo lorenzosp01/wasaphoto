@@ -35,6 +35,7 @@ async function getUserProfile() {
 			})
 		}
 		username.value = userProfile.value.user_info.username
+		error_msg.value = null
 	}).catch((e) => {
 		switch (e.response.status) {
 			case 404:
@@ -56,7 +57,6 @@ async function getUserFollowed() {
 			followersList.value = response.data.users.map((user) => {
 				return user.id
 			})
-			error_msg.value = null
 		})
 		.catch((e) => {
 			if (e.response.status !== 404) {
@@ -73,7 +73,6 @@ async function getUserBannedList() {
 			bannedList.value = response.data.users.map((user) => {
 				return user.id
 			})
-			error_msg.value = null
 		})
 		.catch((e) => {
 			if (e.response.status !== 404) {
@@ -109,7 +108,7 @@ async function unbanUser() {
 async function followUser() {
 	axios.put(`/profiles/${token}/following/${userId.value}`)
 		.then(() => {
-			userProfile.value.profileInfo.followingCounter++
+			userProfile.value.profileInfo.followersCounter++
 			followersList.value.push(parseInt(userId.value))
 		})
 		.catch((e) => {
@@ -120,7 +119,7 @@ async function followUser() {
 async function unfollowUser() {
 	axios.delete(`/profiles/${token}/following/${userId.value}`)
 		.then(() => {
-			userProfile.value.profileInfo.followingCounter--
+			userProfile.value.profileInfo.followersCounter--
 			followersList.value = followersList.value.filter((id) => {
 				return id !== parseInt(userId.value)
 			})
@@ -151,8 +150,8 @@ const deletePhoto = (id) => {
 	photos.value = photos.value.filter((photo) => {
 		return photo.id !== id
 	})
-	getUserProfile()
 }
+
 const getMorePhotos =  (e) => {
 	if (window.scrollY + window.innerHeight >= document.body.scrollHeight && wantsMorePhotos) {
 		offset += amount
@@ -182,7 +181,7 @@ onMounted(() => {
 </script>
 <template>
 	<ErrorMsg v-if="error_msg" :msg="error_msg"></ErrorMsg>
-	<div v-if="userProfile" class="h-100">
+	<div v-if="userProfile && !error_msg" class="h-100">
 		<div class="d-flex justify-content-center align-items-center">
 			<div class="h1 align-items-center" v-if="!isEditingName">{{ username }}</div>
 			<input v-else type="text" class="form-control w-25" v-model="username">
@@ -206,7 +205,7 @@ onMounted(() => {
 			<div class="d-flex justify-content-around">
 				<div class="">
 					<h1 class="h4"> Photos </h1>
-					<div class="fs-5 text-center">{{ userProfile.profileInfo.photosCounter }}</div>
+					<div class="fs-5 text-center">{{ photos.length }}</div>
 				</div>
 				<div>
 					<h1 class="h4"> Following </h1>
