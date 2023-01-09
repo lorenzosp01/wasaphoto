@@ -130,6 +130,7 @@ async function unfollowUser() {
 		})
 }
 
+
 async function editName() {
 	if (username.value !== userProfile.value.user_info.username) {
 		axios.put(`/profiles/${token}/name`, {
@@ -146,6 +147,12 @@ async function editName() {
 	}
 }
 
+const deletePhoto = (id) => {
+	photos.value = photos.value.filter((photo) => {
+		return photo.id !== id
+	})
+	getUserProfile()
+}
 const getMorePhotos =  (e) => {
 	if (window.scrollY + window.innerHeight >= document.body.scrollHeight && wantsMorePhotos) {
 		offset += amount
@@ -212,7 +219,7 @@ onMounted(() => {
 			</div>
 
 			<div class="row row-cols-1 row-cols-md-3 px-5 pt-5">
-				<Post v-for="photo in photos" :key="photo.id" @delete-photo="getUserProfile "
+				<Post v-for="photo in photos" :key="photo.id" @delete-photo="deletePhoto(photo.id)"
 					  :userId="userProfile.user_info.id" :photo="photo"/>
 			</div>
 		</div>
