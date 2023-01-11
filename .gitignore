@@ -13,3 +13,4 @@ docker-compose.log
 /doc/markdown
 /webapi
 tunnel.sh
+service/database/source/wasa.db
