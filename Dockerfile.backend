@@ -12,4 +12,4 @@ EXPOSE 3000 4000
 WORKDIR /app/
 VOLUME /app/service/database/source/
 COPY --from=builder /app/webapi ./
-###CMD ["/app/webapi"]
+CMD ["/app/webapi"]
