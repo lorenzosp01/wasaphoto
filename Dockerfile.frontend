@@ -4,5 +4,5 @@ COPY webui webui
 WORKDIR /src/webui
 RUN npm run build-prod
 
-FROM nginx:1.23.s
+FROM nginx:stable
 COPY --from=builder /src/webui/dist /usr/share/nginx/html

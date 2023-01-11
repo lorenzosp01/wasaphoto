@@ -10,6 +10,6 @@ FROM debian:bullseye
 EXPOSE 3000 4000
 
 WORKDIR /app/
+VOLUME /app/service/database/source/
 COPY --from=builder /app/webapi ./
-COPY --from=builder /src/service/database/source ./service/database/source
-CMD ["/app/webapi"]
+###CMD ["/app/webapi"]
