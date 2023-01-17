@@ -10,6 +10,7 @@ FROM debian:bullseye
 EXPOSE 3000 4000
 
 WORKDIR /app/
+RUN mkdir -p -m a=rwx ./service/database/
 COPY --from=builder /app/webapi ./
-COPY --from=builder /src/service/database/source ./service/database/source
+
 CMD ["/app/webapi"]
