@@ -30,8 +30,11 @@ async function getUserProfile() {
 		userProfile.value = response.data
 		wantsMorePhotos = (userProfile.value.photos !== null)
 		if (wantsMorePhotos) {
+			let photosId = photos.value.map(photo => photo.id)
 			userProfile.value.photos.forEach(photo => {
-				photos.value.push(photo)
+				if (!photosId.includes(photo.id)) {
+					photos.value.push(photo)
+				}
 			})
 		}
 		username.value = userProfile.value.user_info.username
@@ -135,6 +138,7 @@ async function editName() {
 		axios.put(`/profiles/${token}/name`, {
 			username: username.value
 		}).then(() => {
+			getUserProfile()
 			isEditingName.value = false
 		}).catch((e) => {
 			if (e.response.status === 409) {
@@ -147,6 +151,7 @@ async function editName() {
 }
 
 const deletePhoto = (id) => {
+	userProfile.value.profileInfo.photosCounter--
 	photos.value = photos.value.filter((photo) => {
 		return photo.id !== id
 	})
@@ -205,7 +210,7 @@ onMounted(() => {
 			<div class="d-flex justify-content-around">
 				<div class="">
 					<h1 class="h4"> Photos </h1>
-					<div class="fs-5 text-center">{{ photos.length }}</div>
+					<div class="fs-5 text-center">{{ userProfile.profileInfo.photosCounter }}</div>
 				</div>
 				<div>
 					<h1 class="h4"> Following </h1>
