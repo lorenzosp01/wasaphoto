@@ -13,7 +13,7 @@ const followersList = ref([]);
 const bannedList = ref([]);
 const username = ref("")
 const isEditingName = ref(false)
-const emit = defineEmits(["login"]);
+// const emit = defineEmits(["login"]);
 const photos = ref([])
 
 let amount = 10

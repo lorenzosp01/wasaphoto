@@ -13,32 +13,29 @@ import (
 // required by the httprouter package.
 type httpRouterHandler func(http.ResponseWriter, *http.Request, map[string]int64)
 
-const (
-	maxParams int = 3
-)
-
-// Parses the request and checks if path in the id are valid and entity with that exists
-func (rt *_router) wrap(fn httpRouterHandler, dbTables []string) func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+// Parses the request and checks if path is valid
+func (rt *_router) wrap(fn httpRouterHandler) func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
-		var entitiesId [maxParams]int64
+		//todo rimosso il controllo sull'entità del path, metterlo nell'handler
+		//var entitiesId [maxParams]int64
 		var err error
 		var dbErr database.DbError
 		params := make(map[string]int64)
 
-		for i, table := range dbTables {
-			entitiesId[i], err = strconv.ParseInt(ps[i].Value, 10, 64)
-			if err != nil {
-				rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400, Message: "Bad request"})
-				return
-			}
-			dbErr = rt.db.EntityExists(entitiesId[i], table)
-			if dbErr.InternalError != nil {
-				rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
-				return
-			}
-			params[ps[i].Key] = entitiesId[i]
-		}
+		//for i, table := range dbTables {
+		//	entitiesId[i], err = strconv.ParseInt(ps[i].Value, 10, 64)
+		//	if err != nil {
+		//		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400, Message: "Bad request"})
+		//		return
+		//	}
+		//	dbErr = rt.db.EntityExists(entitiesId[i], table)
+		//	if dbErr.InternalError != nil {
+		//		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
+		//		return
+		//	}
+		//	params[ps[i].Key] = entitiesId[i]
+		//}
 
 		authorizationHeader := r.Header.Get("Authorization")
 		token := utils.GetAuthenticationToken(authorizationHeader)
@@ -56,18 +53,28 @@ func (rt *_router) wrap(fn httpRouterHandler, dbTables []string) func(w http.Res
 
 		params["token"] = tokenInt
 
-		for paramKey, param := range r.URL.Query() {
-			params[paramKey], err = strconv.ParseInt(param[0], 10, 64)
-			if err != nil && paramKey != "pattern" {
-				rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 401, Message: "Bad request"})
+		for _, pathParam := range ps {
+			params[pathParam.Key], err = strconv.ParseInt(pathParam.Value, 10, 64)
+			if err != nil {
+				rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400, Message: "Bad request"})
 				return
 			}
 		}
+
+		//todo move query string params in each handler
+		//for paramKey, param := range r.URL.Query() {
+		//	params[paramKey], err = strconv.ParseInt(param[0], 10, 64)
+		//	if err != nil && paramKey != "pattern" {
+		//		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 401, Message: "Bad request"})
+		//		return
+		//	}
+		//}
 
 		fn(w, r, params)
 	}
 }
 
+// Check if user identifier in url path matches the one in the token in the request header
 func (rt *_router) authWrap(fn httpRouterHandler) func(w http.ResponseWriter, r *http.Request, params map[string]int64) {
 	return func(w http.ResponseWriter, r *http.Request, params map[string]int64) {
 
