@@ -164,7 +164,6 @@ const getMorePhotos =  (e) => {
 	}
 }
 
-
 onBeforeRouteUpdate((to, from) => {
 	userId.value = to.params.id
 	photos.value = []

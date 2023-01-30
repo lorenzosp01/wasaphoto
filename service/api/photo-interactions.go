@@ -13,8 +13,8 @@ func (rt *_router) likePhoto(w http.ResponseWriter, r *http.Request, params map[
 	userId := params["user_id"]
 	photoId := params["photo_id"]
 
-	if authUserId != params["auth_user_id"] {
-		rt.LoggerAndHttpErrorSender(w, errors.New("who puts like and authenticated user id are different"), utils.HttpError{StatusCode: 403, Message: "You can't like a photo impersonating someone else"})
+	if authUserId != params["targeted_user_id"] {
+		rt.LoggerAndHttpErrorSender(w, errors.New("who puts like and authenticated user id are different"), utils.HttpError{StatusCode: http.StatusForbidden, Message: "You can't like a photo impersonating someone else"})
 		return
 	}
 
@@ -41,8 +41,8 @@ func (rt *_router) unlikePhoto(w http.ResponseWriter, r *http.Request, params ma
 	authUserId := params["token"]
 	userId := params["user_id"]
 
-	if authUserId != params["auth_user_id"] {
-		rt.LoggerAndHttpErrorSender(w, errors.New("who deletes like and authenticated user id are different"), utils.HttpError{StatusCode: 403, Message: "You can't unlike a photo impersonating someone else"})
+	if authUserId != params["targeted_user_id"] {
+		rt.LoggerAndHttpErrorSender(w, errors.New("who deletes like and authenticated user id are different"), utils.HttpError{StatusCode: http.StatusForbidden, Message: "You can't unlike a photo impersonating someone else"})
 		return
 	}
 
@@ -84,7 +84,7 @@ func (rt *_router) commentPhoto(w http.ResponseWriter, r *http.Request, params m
 	var comment Comment
 	err := json.NewDecoder(r.Body).Decode(&comment)
 	if err != nil {
-		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400})
+		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: http.StatusBadRequest})
 		return
 	}
 

@@ -106,6 +106,7 @@ type DbError struct {
 	Code          int
 }
 
+// todo rivedere (i codici dovrebbe restituirli solo l'api)
 const (
 	NotFound            int = 1
 	ForbiddenAction     int = 2
@@ -150,6 +151,14 @@ const (
 
 type appdbimpl struct {
 	c *sql.DB
+}
+
+var ParamsNameToTable = map[string]string{
+	"token":            UserTable,
+	"user_id":          UserTable,
+	"photo_id":         PhotoTable,
+	"targeted_user_id": UserTable,
+	"comment_id":       CommentTable,
 }
 
 // New returns a new instance of AppDatabase based on the SQLite connection `db`.

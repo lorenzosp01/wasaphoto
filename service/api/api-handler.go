@@ -23,8 +23,8 @@ func (rt *_router) Handler() http.Handler {
 	rt.router.GET("/profiles/:user_id/following/", rt.wrap(rt.authWrap(rt.getFollowedUsers)))
 	rt.router.GET("/profiles/:user_id/ban/", rt.wrap(rt.authWrap(rt.getBannedUsers)))
 	// Photo interactions
-	rt.router.PUT("/profiles/:user_id/photos/:photo_id/likes/:auth_user_id", rt.wrap(rt.likePhoto))
-	rt.router.DELETE("/profiles/:user_id/photos/:photo_id/likes/:auth_user_id", rt.wrap(rt.unlikePhoto))
+	rt.router.PUT("/profiles/:user_id/photos/:photo_id/likes/:targeted_user_id", rt.wrap(rt.likePhoto))
+	rt.router.DELETE("/profiles/:user_id/photos/:photo_id/likes/:targeted_user_id", rt.wrap(rt.unlikePhoto))
 	rt.router.POST("/profiles/:user_id/photos/:photo_id/comments/", rt.wrap(rt.commentPhoto))
 	rt.router.DELETE("/profiles/:user_id/photos/:photo_id/comments/:comment_id", rt.wrap(rt.deleteComment))
 	rt.router.GET("/profiles/:user_id/photos/:photo_id/comments/", rt.wrap(rt.getPhotoComments))

@@ -14,7 +14,7 @@ func (rt *_router) uploadPhoto(w http.ResponseWriter, r *http.Request, params ma
 
 	photo, err := io.ReadAll(r.Body)
 	if err != nil || len(photo) == 0 {
-		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400})
+		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: http.StatusBadRequest})
 		return
 	}
 
@@ -63,12 +63,12 @@ func (rt *_router) setMyUsername(w http.ResponseWriter, r *http.Request, params 
 	var newUsername Username
 	err := json.NewDecoder(r.Body).Decode(&newUsername)
 	if err != nil {
-		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400, Message: "Invalid request body"})
+		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: http.StatusBadRequest, Message: "Invalid request body"})
 		return
 	}
 
 	if !newUsername.IsValid() {
-		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400, Message: "Invalid username"})
+		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: http.StatusBadRequest, Message: "Invalid username"})
 		return
 	}
 
@@ -111,13 +111,13 @@ func (rt *_router) getUserProfile(w http.ResponseWriter, r *http.Request, params
 	// get query params
 	offset, err := strconv.ParseInt(r.URL.Query().Get("offset"), 10, 64)
 	if err != nil {
-		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400, Message: "Query paramaters badly formatted"})
+		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: http.StatusBadRequest, Message: "Query paramaters badly formatted"})
 		return
 	}
 
 	amount, err := strconv.ParseInt(r.URL.Query().Get(r.URL.Query().Get("amount")), 10, 64)
 	if err != nil {
-		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400, Message: "Query paramaters badly formatted"})
+		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: http.StatusBadRequest, Message: "Query paramaters badly formatted"})
 		return
 	}
 

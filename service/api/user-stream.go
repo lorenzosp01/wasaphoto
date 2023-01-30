@@ -15,13 +15,13 @@ func (rt *_router) getMyStream(w http.ResponseWriter, r *http.Request, params ma
 	// get query params
 	offset, err := strconv.ParseInt(r.URL.Query().Get("offset"), 10, 64)
 	if err != nil {
-		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400, Message: "Query paramaters badly formatted"})
+		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: http.StatusBadRequest, Message: "Query paramaters badly formatted"})
 		return
 	}
 
 	amount, err := strconv.ParseInt(r.URL.Query().Get(r.URL.Query().Get("amount")), 10, 64)
 	if err != nil {
-		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: 400, Message: "Query paramaters badly formatted"})
+		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: http.StatusBadRequest, Message: "Query paramaters badly formatted"})
 		return
 	}
 
@@ -33,7 +33,7 @@ func (rt *_router) getMyStream(w http.ResponseWriter, r *http.Request, params ma
 	}
 
 	if len(dbPhotos) == 0 {
-		httpErr := utils.HttpError{StatusCode: 404, Message: "No photos found"}
+		httpErr := utils.HttpError{StatusCode: http.StatusNotFound, Message: "No photos found"}
 		rt.LoggerAndHttpErrorSender(w, errors.New("no photos for that user stream"), httpErr)
 		return
 	}

@@ -32,7 +32,7 @@ func (rt *_router) doSearch(w http.ResponseWriter, r *http.Request, params map[s
 	}
 
 	if len(users) == 0 {
-		httpErr := utils.HttpError{StatusCode: 404, Message: "No users found"}
+		httpErr := utils.HttpError{StatusCode: http.StatusNotFound, Message: "No users found"}
 		rt.LoggerAndHttpErrorSender(w, nil, httpErr)
 		return
 	}

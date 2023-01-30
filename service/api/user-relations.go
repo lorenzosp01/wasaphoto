@@ -26,7 +26,7 @@ func (rt *_router) targetUser(w http.ResponseWriter, r *http.Request, params map
 	targetedUserId := params["targeted_user_id"]
 
 	if targetedUserId == authUserId {
-		rt.LoggerAndHttpErrorSender(w, errors.New("a user can't target himself"), utils.HttpError{StatusCode: 403, Message: "You can't target yourself"})
+		rt.LoggerAndHttpErrorSender(w, errors.New("a user can't target himself"), utils.HttpError{StatusCode: http.StatusForbidden, Message: "You can't target yourself"})
 		return
 	}
 
@@ -81,7 +81,7 @@ func (rt *_router) untargetUser(w http.ResponseWriter, r *http.Request, params m
 	targetedUserId := params["targeted_user_id"]
 
 	if targetedUserId == authUserId {
-		rt.LoggerAndHttpErrorSender(w, errors.New("a user can't untarget himself"), utils.HttpError{StatusCode: 403, Message: "You can't untarget yourself"})
+		rt.LoggerAndHttpErrorSender(w, errors.New("a user can't untarget himself"), utils.HttpError{StatusCode: http.StatusForbidden, Message: "You can't untarget yourself"})
 		return
 	}
 
