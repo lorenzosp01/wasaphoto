@@ -14,14 +14,19 @@ func (db *appdbimpl) GetUserId(username string) (int64, DbError) {
 	err := db.c.QueryRow(query, username).Scan(&id)
 	var dbErr DbError
 
-	if errors.Is(err, sql.ErrNoRows) {
-		// If no user has been found, create a new one
-		id, err = db.createUser(username)
-		if err != nil {
-			dbErr.InternalError = err
-			dbErr.Code = GenericError
-			return id, dbErr
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			// If no user has been found, create a new one
+			id, err = db.createUser(username)
+			if id == -1 {
+				dbErr.InternalError = err
+				dbErr.Code = GenericError
+				return id, dbErr
+			}
 		}
+		dbErr.InternalError = err
+		dbErr.Code = GenericError
+		return id, dbErr
 	}
 
 	return id, dbErr
@@ -34,10 +39,10 @@ func (db *appdbimpl) createUser(username string) (int64, error) {
 	row, err := db.c.Exec("INSERT INTO User (name) VALUES (?)", username)
 	// If the insert was unsuccessful, return a no one identifier and an error
 	if err != nil {
-		return 0, err
+		return -1, err
 	}
 
-	// da modificare in bass alla concorrenza
+	//todo da modificare in base alla concorrenza
 	id, err = row.LastInsertId()
 	return id, err
 }

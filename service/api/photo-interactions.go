@@ -14,25 +14,33 @@ func (rt *_router) likePhoto(w http.ResponseWriter, r *http.Request, params map[
 	photoId := params["photo_id"]
 
 	if authUserId != params["targeted_user_id"] {
-		rt.LoggerAndHttpErrorSender(w, errors.New("who puts like and authenticated user id are different"), utils.HttpError{StatusCode: http.StatusForbidden, Message: "You can't like a photo impersonating someone else"})
+		rt.LoggerAndHttpErrorSender(w, errors.New("token differs from path user id"), utils.HttpError{StatusCode: http.StatusForbidden, Message: "You can't like a photo impersonating someone else"})
 		return
 	}
 
+	// Check if the user who wants to like photo is banned by photo owner
 	isBanned, dbErr := rt.db.IsUserTargeted(userId, authUserId, database.BanTable)
 	if dbErr.InternalError != nil {
-		if isBanned {
-			dbErr.CustomMessage = utils.BannedMessage
-		}
 		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
+		return
+	} else if isBanned {
+		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusForbidden, Message: utils.BannedMessage})
 		return
 	}
 
-	dbErr = rt.db.LikePhoto(authUserId, photoId, userId)
+	var isOperationSuccessful bool
+	isOperationSuccessful, dbErr = rt.db.LikePhoto(authUserId, photoId, userId)
 	if dbErr.InternalError != nil {
 		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
 	}
 
+	if !isOperationSuccessful {
+		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusConflict, Message: "Photo doesn't belong to that user"})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "text/plain")
 	_, _ = w.Write([]byte("Photo liked successfully"))
 }
@@ -46,23 +54,31 @@ func (rt *_router) unlikePhoto(w http.ResponseWriter, r *http.Request, params ma
 		return
 	}
 
+	// Check if the user who wants to like photo is banned by photo owner
 	isBanned, dbErr := rt.db.IsUserTargeted(userId, authUserId, database.BanTable)
 	if dbErr.InternalError != nil {
-		if isBanned {
-			dbErr.CustomMessage = utils.BannedMessage
-		}
 		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
+		return
+	} else if isBanned {
+		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusForbidden, Message: utils.BannedMessage})
 		return
 	}
 
 	photoId := params["photo_id"]
 
-	dbErr = rt.db.UnlikePhoto(authUserId, photoId, userId)
+	var isOperationSuccessful bool
+	isOperationSuccessful, dbErr = rt.db.UnlikePhoto(authUserId, photoId, userId)
 	if dbErr.InternalError != nil {
 		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
 	}
 
+	if !isOperationSuccessful {
+		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusNotFound, Message: "Like not found"})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "text/plain")
 	_, _ = w.Write([]byte("Photo unliked successfully"))
 }
@@ -72,12 +88,13 @@ func (rt *_router) commentPhoto(w http.ResponseWriter, r *http.Request, params m
 	userId := params["user_id"]
 	photoId := params["photo_id"]
 
+	// Check if the user who wants to like photo is banned by photo owner
 	isBanned, dbErr := rt.db.IsUserTargeted(userId, authUserId, database.BanTable)
 	if dbErr.InternalError != nil {
-		if isBanned {
-			dbErr.CustomMessage = utils.BannedMessage
-		}
 		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
+		return
+	} else if isBanned {
+		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusForbidden, Message: utils.BannedMessage})
 		return
 	}
 
@@ -88,9 +105,16 @@ func (rt *_router) commentPhoto(w http.ResponseWriter, r *http.Request, params m
 		return
 	}
 
-	dbErr = rt.db.CommentPhoto(authUserId, photoId, userId, comment.Content)
+	// var if operation is not successful, it will be nil
+	var isOperationSuccessful bool
+	isOperationSuccessful, dbErr = rt.db.CommentPhoto(authUserId, photoId, userId, comment.Content)
 	if dbErr.InternalError != nil {
 		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
+		return
+	}
+
+	if !isOperationSuccessful {
+		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusConflict, Message: "Comment does not belong to that user"})
 		return
 	}
 
@@ -105,10 +129,10 @@ func (rt *_router) getPhotoComments(w http.ResponseWriter, r *http.Request, para
 
 	isBanned, dbErr := rt.db.IsUserTargeted(userId, authUserId, database.BanTable)
 	if dbErr.InternalError != nil {
-		if isBanned {
-			dbErr.CustomMessage = utils.BannedMessage
-		}
 		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
+		return
+	} else if isBanned {
+		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusForbidden, Message: utils.BannedMessage})
 		return
 	}
 
@@ -125,6 +149,7 @@ func (rt *_router) getPhotoComments(w http.ResponseWriter, r *http.Request, para
 		commentsObject.Comments = append(commentsObject.Comments, comment)
 	}
 
+	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(commentsObject)
 }
@@ -135,12 +160,19 @@ func (rt *_router) deleteComment(w http.ResponseWriter, r *http.Request, params 
 	photoId := params["photo_id"]
 	authUserId := params["token"]
 
-	dbErr := rt.db.DeleteComment(photoId, userId, authUserId, commentId)
+	var isOperationSuccessful bool
+	isOperationSuccessful, dbErr := rt.db.DeleteComment(photoId, userId, authUserId, commentId)
 	if dbErr.InternalError != nil {
 		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
 	}
 
+	if !isOperationSuccessful {
+		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusConflict, Message: "Comment does not belong to that user"})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "text/plain")
 	_, _ = w.Write([]byte("Comment deleted successfully"))
 }

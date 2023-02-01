@@ -30,9 +30,12 @@ func (rt *_router) wrap(fn httpRouterHandler) func(w http.ResponseWriter, r *htt
 				return
 			}
 
-			dbErr = rt.db.EntityExists(entitiesId[i], database.ParamsNameToTable[param.Key])
+			doesItExist, dbErr := rt.db.EntityExists(entitiesId[i], database.ParamsNameToTable[param.Key])
 			if dbErr.InternalError != nil {
 				rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
+				return
+			} else if !doesItExist {
+				rt.LoggerAndHttpErrorSender(w, errors.New("entity not found"), utils.HttpError{StatusCode: http.StatusNotFound, Message: "Entity with " + param.Key + " not found"})
 				return
 			}
 
@@ -42,14 +45,17 @@ func (rt *_router) wrap(fn httpRouterHandler) func(w http.ResponseWriter, r *htt
 		authorizationHeader := r.Header.Get("Authorization")
 		token := utils.GetAuthenticationToken(authorizationHeader)
 		if !token.IsValid() {
-			rt.LoggerAndHttpErrorSender(w, errors.New("token invalid"), utils.HttpError{StatusCode: http.StatusBadRequest, Message: "Token is not valid"})
+			rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusBadRequest, Message: "Token is not valid"})
 			return
 		}
 
 		tokenInt, _ := strconv.ParseInt(token.Value, 10, 64)
-		dbErr = rt.db.EntityExists(tokenInt, database.UserTable)
+		doesUserExists, dbErr := rt.db.EntityExists(tokenInt, database.UserTable)
 		if dbErr.InternalError != nil {
 			rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
+			return
+		} else if !doesUserExists {
+			rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusNotFound, Message: "User with token not found"})
 			return
 		}
 

@@ -44,23 +44,22 @@ type AppDatabase interface {
 	GetUserId(string) (int64, DbError)
 	GetImage(int64, int64) ([]byte, DbError)
 	InsertPhoto([]byte, int64) DbError
-	EntityExists(int64, string) DbError
+	EntityExists(int64, string) (bool, DbError)
 	ChangeUsername(int64, string) DbError
-	DeletePhoto(int64, int64) DbError
+	DeletePhoto(int64, int64) (bool, DbError)
 	GetUserProfile(int64, int64, int64) (UserProfile, DbError)
 	GetMyStream(int64, int64, int64) ([]Photo, DbError)
 	GetUserPhotos(int64, int64, int64) ([]Photo, DbError)
 	getProfileCounters(int64) (ProfileCounters, DbError)
-	TargetUser(int64, int64, string) DbError
+	TargetUser(int64, int64, string) (bool, DbError)
 	IsUserTargeted(int64, int64, string) (bool, DbError)
-	UntargetUser(int64, int64, string) DbError
+	UntargetUser(int64, int64, string) (bool, DbError)
 	GetUsersList(int64, string) ([]User, DbError)
-	LikePhoto(int64, int64, int64) DbError
-	UnlikePhoto(int64, int64, int64) DbError
-	CommentPhoto(int64, int64, int64, string) DbError
-	doesPhotoBelongToUser(int64, int64) bool
+	LikePhoto(int64, int64, int64) (bool, DbError)
+	UnlikePhoto(int64, int64, int64) (bool, DbError)
+	CommentPhoto(int64, int64, int64, string) (bool, DbError)
 	GetPhotoComments(int64, int64) ([]Comment, DbError)
-	DeleteComment(int64, int64, int64, int64) DbError
+	DeleteComment(int64, int64, int64, int64) (bool, DbError)
 	DoSearch(string) ([]User, DbError)
 }
 
@@ -102,37 +101,24 @@ type User struct {
 
 type DbError struct {
 	InternalError error
-	CustomMessage string
 	Code          int
 }
 
 // todo rivedere (i codici dovrebbe restituirli solo l'api)
 const (
-	NotFound            int = 1
-	ForbiddenAction     int = 2
-	BadInput            int = 3
-	EntityAlreadyExists int = 4
-	GenericError        int = 5
-	GenericConflict     int = 6
+	StateConflict int = 4
+	GenericError  int = 5
 )
-
-var ErrNoRowsDeleted = errors.New("no rows deleted")
 
 func (e DbError) ToHttp() utils.HttpError {
 	var httpErr utils.HttpError
-	if e.CustomMessage != "" {
-		httpErr.Message = e.CustomMessage
-	} else {
-		httpErr.Message = "Internal error"
-	}
+
 	switch e.Code {
-	case NotFound:
-		httpErr.StatusCode = http.StatusNotFound
-	case ForbiddenAction:
-		httpErr.StatusCode = http.StatusForbidden
-	case BadInput:
-		httpErr.StatusCode = http.StatusBadRequest
-	case EntityAlreadyExists, GenericConflict:
+	//case ForbiddenAction:
+	//	httpErr.StatusCode = http.StatusForbidden
+	//case BadInput:
+	//	httpErr.StatusCode = http.StatusBadRequest
+	case StateConflict:
 		httpErr.StatusCode = http.StatusConflict
 	case GenericError:
 		httpErr.StatusCode = http.StatusInternalServerError
@@ -179,21 +165,18 @@ func (db *appdbimpl) Ping() error {
 	return db.c.Ping()
 }
 
-func (db *appdbimpl) EntityExists(id int64, tableToUse string) DbError {
-	query := fmt.Sprintf("SELECT id FROM %s WHERE id=?", tableToUse)
-	err := db.c.QueryRow(query, id).Scan(&id)
+func (db *appdbimpl) EntityExists(id int64, tableToUse string) (bool, DbError) {
+	var entityCounter int
+	query := fmt.Sprintf("SELECT count(*) FROM %s WHERE id=?", tableToUse)
+	err := db.c.QueryRow(query, id).Scan(&entityCounter)
 	var dbErr DbError
 	if err != nil {
 		dbErr.InternalError = err
-		if errors.Is(err, sql.ErrNoRows) {
-			dbErr.Code = NotFound
-			dbErr.CustomMessage = tableToUse + " not found"
-		} else {
-			dbErr.Code = GenericError
-		}
-
+		dbErr.Code = GenericError
+		return false, dbErr
 	}
-	return dbErr
+
+	return entityCounter > 0, dbErr
 }
 
 func (db *appdbimpl) IsUserTargeted(targetingUserId int64, targetedUserId int64, tableName string) (bool, DbError) {
@@ -206,8 +189,6 @@ func (db *appdbimpl) IsUserTargeted(targetingUserId int64, targetedUserId int64,
 	case FollowTable:
 		query = fmt.Sprintf("SELECT count(*) FROM %s WHERE following=? AND follower=?", FollowTable)
 	default:
-		dbErr.Code = BadInput
-		dbErr.CustomMessage = "Invalid parameters"
 		return false, dbErr
 	}
 
@@ -220,10 +201,10 @@ func (db *appdbimpl) IsUserTargeted(targetingUserId int64, targetedUserId int64,
 		return false, dbErr
 	}
 
-	if targetCount > 0 {
-		dbErr.InternalError = errors.New("User is targeted")
-		dbErr.Code = ForbiddenAction
-	}
+	//if targetCount > 0 {
+	//	dbErr.InternalError = errors.New("User is targeted")
+	//	dbErr.Code = ForbiddenAction
+	//}
 
 	return targetCount > 0, dbErr
 }

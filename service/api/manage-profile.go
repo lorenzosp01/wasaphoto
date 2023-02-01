@@ -24,6 +24,7 @@ func (rt *_router) uploadPhoto(w http.ResponseWriter, r *http.Request, params ma
 		return
 	}
 
+	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "text/plain")
 	_, _ = w.Write([]byte("Photo uploaded successfully"))
 }
@@ -35,15 +36,12 @@ func (rt *_router) getImage(w http.ResponseWriter, r *http.Request, params map[s
 	userId := params["user_id"]
 
 	userIsBanned, dbErr := rt.db.IsUserTargeted(userId, authUserId, database.BanTable)
-	if userIsBanned {
-		dbErr.CustomMessage = utils.BannedMessage
+	if dbErr.InternalError != nil {
 		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
-	} else {
-		if dbErr.InternalError != nil {
-			rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
-			return
-		}
+	} else if userIsBanned {
+		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusForbidden, Message: utils.BannedMessage})
+		return
 	}
 
 	var image []byte
@@ -51,8 +49,12 @@ func (rt *_router) getImage(w http.ResponseWriter, r *http.Request, params map[s
 	if dbErr.InternalError != nil {
 		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
+	} else if image == nil {
+		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusConflict, Message: "Photo does not belong to that user"})
+		return
 	}
 
+	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "image/png")
 	_, _ = w.Write(image)
 }
@@ -84,7 +86,7 @@ func (rt *_router) setMyUsername(w http.ResponseWriter, r *http.Request, params 
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
+	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(user)
 }
 
@@ -92,9 +94,13 @@ func (rt *_router) deletePhoto(w http.ResponseWriter, r *http.Request, params ma
 	photoId := params["photo_id"]
 	userId := params["user_id"]
 
-	dbErr := rt.db.DeletePhoto(photoId, userId)
+	var isOperationSuccessful bool
+	isOperationSuccessful, dbErr := rt.db.DeletePhoto(photoId, userId)
 	if dbErr.InternalError != nil {
 		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
+		return
+	} else if !isOperationSuccessful {
+		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusConflict, Message: "Photo does not belong to that user"})
 		return
 	}
 
@@ -124,25 +130,22 @@ func (rt *_router) getUserProfile(w http.ResponseWriter, r *http.Request, params
 	var userIsBanned bool
 	var dbErr database.DbError
 	userIsBanned, dbErr = rt.db.IsUserTargeted(userId, authUserId, database.BanTable)
-	if userIsBanned {
-		dbErr.CustomMessage = utils.BannedMessage
+	if dbErr.InternalError != nil {
 		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
-	} else {
-		if dbErr.InternalError != nil {
-			rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
-			return
-		}
+	} else if userIsBanned {
+		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusForbidden, Message: utils.BannedMessage})
+		return
 	}
 
 	up, dbErr := rt.db.GetUserProfile(userId, amount, offset)
-	userProfile.fromDatabase(up)
 	if dbErr.InternalError != nil {
 		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
 	}
+	userProfile.fromDatabase(up)
 
+	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(userProfile)
-
 }

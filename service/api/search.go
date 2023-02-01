@@ -21,14 +21,15 @@ func (rt *_router) doSearch(w http.ResponseWriter, r *http.Request, params map[s
 	for _, dbUser := range dbUsers {
 		var user User
 		user.fromDatabase(dbUser)
-		isTargeted, dbErr := rt.db.IsUserTargeted(user.Id, authUserId, database.BanTable)
-		if !isTargeted {
-			if dbErr.InternalError != nil {
-				rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
-				return
-			}
-			users = append(users, user)
+		isBanned, dbErr := rt.db.IsUserTargeted(user.Id, authUserId, database.BanTable)
+		if dbErr.InternalError != nil {
+			rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
+			return
 		}
+		if isBanned {
+			rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusForbidden, Message: "You are banned from this user"})
+		}
+		users = append(users, user)
 	}
 
 	if len(users) == 0 {
@@ -37,6 +38,7 @@ func (rt *_router) doSearch(w http.ResponseWriter, r *http.Request, params map[s
 		return
 	}
 
+	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(userList{users})
 }

@@ -25,7 +25,6 @@ func (rt *_router) getMyStream(w http.ResponseWriter, r *http.Request, params ma
 		return
 	}
 
-	// todo implementare meglio la restituzione dello stream
 	dbPhotos, dbErr := rt.db.GetMyStream(authUserId, offset, amount)
 	if dbErr.InternalError != nil {
 		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
@@ -44,6 +43,7 @@ func (rt *_router) getMyStream(w http.ResponseWriter, r *http.Request, params ma
 		photos = append(photos, photo)
 	}
 
+	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(UserStream{photos})
 

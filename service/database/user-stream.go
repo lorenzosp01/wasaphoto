@@ -1,8 +1,6 @@
 package database
 
 import (
-	"database/sql"
-	"errors"
 	"fmt"
 )
 
@@ -23,12 +21,7 @@ func (db *appdbimpl) GetMyStream(userId int64, offset int64, amount int64) ([]Ph
 			var photo Photo
 			err = rows.Scan(&photo.Id, &photo.Owner.Username, &photo.Owner.Id, &photo.UploadedAt)
 			if err != nil {
-				if errors.Is(err, sql.ErrNoRows) {
-					dbErr.Code = NotFound
-					dbErr.CustomMessage = "User not found"
-				} else {
-					dbErr.Code = GenericError
-				}
+				dbErr.Code = GenericError
 				dbErr.InternalError = err
 				return nil, dbErr
 			}

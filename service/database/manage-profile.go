@@ -30,8 +30,7 @@ func (db *appdbimpl) GetImage(photo int64, user int64) ([]byte, DbError) {
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			dbErr.CustomMessage = "that image doesn't belongs to the user in path"
-			dbErr.Code = GenericConflict
+			dbErr.Code = StateConflict
 		} else {
 			dbErr.Code = GenericError
 		}
@@ -51,8 +50,7 @@ func (db *appdbimpl) ChangeUsername(id int64, newUsername string) DbError {
 		dbErr.InternalError = err
 		if errors.As(err, &sqlErr) {
 			if errors.Is(sqlErr.ExtendedCode, sqlite3.ErrConstraintUnique) {
-				dbErr.Code = EntityAlreadyExists
-				dbErr.CustomMessage = "Someone already owns that name"
+				dbErr.Code = StateConflict
 			} else {
 				dbErr.Code = GenericError
 			}
@@ -63,22 +61,21 @@ func (db *appdbimpl) ChangeUsername(id int64, newUsername string) DbError {
 }
 
 // Photo has to belong to the authenticated user
-func (db *appdbimpl) DeletePhoto(photo int64, user int64) DbError {
+func (db *appdbimpl) DeletePhoto(photo int64, user int64) (bool, DbError) {
 	var dbErr DbError
-	if db.doesPhotoBelongToUser(photo, user) {
-		query := fmt.Sprintf("DELETE FROM %s WHERE id=? AND owner=?", PhotoTable)
-		_, err := db.c.Exec(query, photo, user)
-		if err != nil {
-			dbErr.Code = GenericError
-			dbErr.InternalError = err
-		}
+	var affected int64
+
+	query := fmt.Sprintf("DELETE FROM %s WHERE id=? AND owner=?", PhotoTable)
+	res, err := db.c.Exec(query, photo, user)
+	if err != nil {
+		dbErr.Code = GenericError
+		dbErr.InternalError = err
+		return false, dbErr
 	} else {
-		dbErr.Code = GenericConflict
-		dbErr.CustomMessage = "That photo doesn't belongs to the authenticated user"
-		dbErr.InternalError = errors.New("Photo and photo owner don't match")
+		affected, _ = res.RowsAffected()
 	}
 
-	return dbErr
+	return affected > 0, dbErr
 }
 
 func (db *appdbimpl) GetUserProfile(id int64, photosAmount int64, photosOffset int64) (UserProfile, DbError) {
@@ -90,13 +87,7 @@ func (db *appdbimpl) GetUserProfile(id int64, photosAmount int64, photosOffset i
 	err := db.c.QueryRow(query, id).Scan(&up.UserInfo.Username)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			dbErr.Code = NotFound
-			dbErr.CustomMessage = "User not found"
-		} else {
-			dbErr.Code = GenericError
-		}
-
+		dbErr.Code = GenericError
 		dbErr.InternalError = err
 		return up, dbErr
 	}
@@ -122,13 +113,7 @@ func (db *appdbimpl) GetUserPhotos(id int64, amount int64, offset int64) ([]Phot
 	rows, err := db.c.Query(query, id, amount, offset)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			dbErr.Code = ForbiddenAction
-			dbErr.CustomMessage = "That user doesn't own that photo"
-		} else {
-			dbErr.Code = GenericError
-		}
-
+		dbErr.Code = GenericError
 		dbErr.InternalError = err
 		return nil, dbErr
 	}
@@ -139,12 +124,7 @@ func (db *appdbimpl) GetUserPhotos(id int64, amount int64, offset int64) ([]Phot
 	for rows.Next() {
 		err = rows.Scan(&photo.Id, &photo.Owner.Username, &photo.Owner.Id, &photo.UploadedAt)
 		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				dbErr.Code = NotFound
-				dbErr.CustomMessage = "User not found"
-			} else {
-				dbErr.Code = GenericError
-			}
+			dbErr.Code = GenericError
 			dbErr.InternalError = err
 			return nil, dbErr
 		}
@@ -161,10 +141,6 @@ func (db *appdbimpl) GetUserPhotos(id int64, amount int64, offset int64) ([]Phot
 	if err != nil {
 		dbErr.Code = GenericError
 		dbErr.InternalError = err
-	}
-
-	if len(photos) == 0 {
-		dbErr.Code = NotFound
 	}
 
 	defer rows.Close()

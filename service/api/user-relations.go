@@ -12,15 +12,16 @@ type userList struct {
 	Users []User `json:"users"`
 }
 
+// todo togliere la request dall'handler
 func (rt *_router) banUser(w http.ResponseWriter, r *http.Request, params map[string]int64) {
-	rt.targetUser(w, r, params, database.BanTable)
+	rt.targetUser(w, params, database.BanTable)
 }
 
 func (rt *_router) followUser(w http.ResponseWriter, r *http.Request, params map[string]int64) {
-	rt.targetUser(w, r, params, database.FollowTable)
+	rt.targetUser(w, params, database.FollowTable)
 }
 
-func (rt *_router) targetUser(w http.ResponseWriter, r *http.Request, params map[string]int64, entityTable string) {
+func (rt *_router) targetUser(w http.ResponseWriter, params map[string]int64, entityTable string) {
 
 	authUserId := params["token"]
 	targetedUserId := params["targeted_user_id"]
@@ -31,33 +32,33 @@ func (rt *_router) targetUser(w http.ResponseWriter, r *http.Request, params map
 	}
 
 	if entityTable == database.FollowTable {
-		isTargeted, dbErr := rt.db.IsUserTargeted(targetedUserId, authUserId, database.BanTable)
+		// Check if the targeted user id banned the authenticated one
+		isBanned, dbErr := rt.db.IsUserTargeted(targetedUserId, authUserId, database.BanTable)
 		if dbErr.InternalError != nil {
-			if isTargeted {
-				dbErr.CustomMessage = "you cannot follow a user that banned you"
-			}
 			rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 			return
 		}
 
-	} else if entityTable == database.BanTable {
-		isTargeted, dbErr := rt.db.IsUserTargeted(targetedUserId, authUserId, database.FollowTable)
-		if dbErr.InternalError != nil {
-			if isTargeted {
-				rt.db.UntargetUser(targetedUserId, authUserId, database.FollowTable)
-				return
-			}
-			rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
+		if isBanned {
+			rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusForbidden, Message: "You can't follow who banned you"})
 			return
 		}
+	} else if entityTable != database.BanTable {
+		return
 	}
 
-	dbErr := rt.db.TargetUser(authUserId, targetedUserId, entityTable)
+	isOperationSuccessful, dbErr := rt.db.TargetUser(authUserId, targetedUserId, entityTable)
 	if dbErr.InternalError != nil {
 		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
 	}
 
+	if !isOperationSuccessful {
+		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusInternalServerError, Message: "Can't target user"})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "text/plain")
 	switch entityTable {
 	case database.BanTable:
@@ -69,14 +70,14 @@ func (rt *_router) targetUser(w http.ResponseWriter, r *http.Request, params map
 }
 
 func (rt *_router) unbanUser(w http.ResponseWriter, r *http.Request, params map[string]int64) {
-	rt.untargetUser(w, r, params, database.BanTable)
+	rt.untargetUser(w, params, database.BanTable)
 }
 
 func (rt *_router) unfollowUser(w http.ResponseWriter, r *http.Request, params map[string]int64) {
-	rt.untargetUser(w, r, params, database.FollowTable)
+	rt.untargetUser(w, params, database.FollowTable)
 }
 
-func (rt *_router) untargetUser(w http.ResponseWriter, r *http.Request, params map[string]int64, entityTable string) {
+func (rt *_router) untargetUser(w http.ResponseWriter, params map[string]int64, entityTable string) {
 	authUserId := params["token"]
 	targetedUserId := params["targeted_user_id"]
 
@@ -88,20 +89,29 @@ func (rt *_router) untargetUser(w http.ResponseWriter, r *http.Request, params m
 	if entityTable == database.FollowTable {
 		isTargeted, dbErr := rt.db.IsUserTargeted(targetedUserId, authUserId, database.BanTable)
 		if dbErr.InternalError != nil {
-			if isTargeted {
-				dbErr.CustomMessage = "you cannot unfollow a user that banned you"
-			}
 			rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 			return
 		}
+		if isTargeted {
+			rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusForbidden, Message: "You can't unfollow who banned you"})
+			return
+		}
+	} else if entityTable != database.BanTable {
+		return
 	}
 
-	dbErr := rt.db.UntargetUser(authUserId, targetedUserId, entityTable)
+	isOperationSuccessful, dbErr := rt.db.UntargetUser(authUserId, targetedUserId, entityTable)
 	if dbErr.InternalError != nil {
 		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
 	}
 
+	if !isOperationSuccessful {
+		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusInternalServerError, Message: "Can't untarget user"})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "text/plain")
 	switch entityTable {
 	case database.BanTable:
@@ -129,6 +139,11 @@ func (rt *_router) getUsersList(w http.ResponseWriter, r *http.Request, params m
 		return
 	}
 
+	if dbUsers == nil {
+		rt.LoggerAndHttpErrorSender(w, errors.New("no users found"), utils.HttpError{StatusCode: http.StatusNotFound, Message: "No users found"})
+		return
+	}
+
 	var users []User
 	for _, dbUser := range dbUsers {
 		var user User
@@ -140,6 +155,7 @@ func (rt *_router) getUsersList(w http.ResponseWriter, r *http.Request, params m
 		Users: users,
 	}
 
+	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(userList)
 }

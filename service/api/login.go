@@ -34,16 +34,12 @@ func (rt *_router) doLogin(w http.ResponseWriter, r *http.Request, ps httprouter
 	id.Id, dbErr = rt.db.GetUserId(username.Username)
 	// if an error occurred while getting the user id
 	if dbErr.InternalError != nil {
-		httpErr := dbErr.ToHttp()
-		w.WriteHeader(httpErr.StatusCode)
-		_, _ = w.Write([]byte(httpErr.Message))
-		rt.baseLogger.WithError(err).Error("error getting user id")
+		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
 	}
 
 	//todo settare gli header ovunque
+	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-type", "application/json")
-	w.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(w).Encode(id)
-
 }

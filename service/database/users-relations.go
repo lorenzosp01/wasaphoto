@@ -6,7 +6,7 @@ import (
 	"github.com/mattn/go-sqlite3"
 )
 
-func (db *appdbimpl) TargetUser(authUserId int64, userId int64, tableName string) DbError {
+func (db *appdbimpl) TargetUser(authUserId int64, userId int64, tableName string) (bool, DbError) {
 	var dbErr DbError
 	var query string
 
@@ -17,31 +17,34 @@ func (db *appdbimpl) TargetUser(authUserId int64, userId int64, tableName string
 		query = fmt.Sprintf("INSERT INTO %s (follower, following) VALUES (?, ?)", FollowTable)
 	default:
 		dbErr.Code = GenericError
-		return dbErr
+		return false, dbErr
 	}
 
-	_, err := db.c.Exec(query, authUserId, userId)
+	var affected int64
+	res, err := db.c.Exec(query, authUserId, userId)
 	if err != nil {
 		var sqlErr sqlite3.Error
 		if errors.As(err, &sqlErr) {
 			if errors.Is(sqlErr.ExtendedCode, sqlite3.ErrConstraintPrimaryKey) {
 				dbErr.InternalError = err
-				dbErr.Code = EntityAlreadyExists
-				dbErr.CustomMessage = "user already targeted by a " + tableName
+				dbErr.Code = StateConflict
 			} else {
-				dbErr.InternalError = errors.New("error casting error to sqlite3.Error")
+				dbErr.InternalError = err
 				dbErr.Code = GenericError
 			}
 		}
+	} else {
+		affected, _ = res.RowsAffected()
 	}
 
-	return dbErr
+	return affected > 0, dbErr
 }
 
-func (db *appdbimpl) UntargetUser(authUserId int64, userId int64, tableName string) DbError {
+func (db *appdbimpl) UntargetUser(authUserId int64, userId int64, tableName string) (bool, DbError) {
 
 	var query string
 	var dbErr DbError
+	var affected int64
 	switch tableName {
 	case BanTable:
 		query = fmt.Sprintf("DELETE FROM %s WHERE banning=? AND banned=?", BanTable)
@@ -53,24 +56,20 @@ func (db *appdbimpl) UntargetUser(authUserId int64, userId int64, tableName stri
 
 	res, err := db.c.Exec(query, authUserId, userId)
 	if err == nil {
-		affected, _ := res.RowsAffected()
-		if affected == 0 {
-			dbErr.Code = NotFound
-			dbErr.CustomMessage = tableName + " not found"
-			dbErr.InternalError = ErrNoRowsDeleted
-		}
+		affected, _ = res.RowsAffected()
 	} else {
 		dbErr.InternalError = err
+		//todo mettere nel toHttp che se non è settatto il code allore è un errore generico
 		dbErr.Code = GenericError
+		return false, dbErr
 	}
 
-	return dbErr
+	return affected > 0, dbErr
 }
 
 func (db *appdbimpl) GetUsersList(authUserId int64, tableName string) ([]User, DbError) {
 	var query string
 	var dbErr DbError
-	dbErr.Code = GenericError
 	var users []User
 
 	switch tableName {
@@ -107,15 +106,8 @@ func (db *appdbimpl) GetUsersList(authUserId int64, tableName string) ([]User, D
 
 	err = rows.Err()
 	if err != nil {
-		dbErr.Code = GenericError
 		dbErr.InternalError = err
 		return nil, dbErr
-	}
-
-	if users == nil {
-		dbErr.Code = NotFound
-		dbErr.CustomMessage = "no users targeted by " + tableName
-		dbErr.InternalError = errors.New("no users found in db")
 	}
 
 	defer rows.Close()
