@@ -156,6 +156,73 @@ func New(db *sql.DB) (AppDatabase, error) {
 
 	_, _ = db.Exec("PRAGMA foreign_keys = ON")
 
+	var tableName string
+	err := db.QueryRow(`SELECT name FROM sqlite_master WHERE type='table' AND name='User';`).Scan(&tableName)
+	if errors.Is(err, sql.ErrNoRows) {
+
+		_, err := db.Exec(
+			` create table User
+					(
+						id   integer primary key autoincrement,
+						name text not null unique
+					);
+
+				create table Ban
+				(
+					banned  integer not null references User on delete cascade,
+					banning integer not null references User on delete cascade,
+					primary key (banned, banning)
+				);
+
+				create table Follow
+				(
+					follower  integer not null references User on delete cascade,
+					following integer not null references User on delete cascade,
+					primary key (follower, following)
+				);
+
+				create table Photo
+				(
+					id          integer
+					primary key autoincrement,
+					owner       integer not null
+					references User
+					on delete cascade,
+					image       blob    not null,
+					uploaded_at datetime default current_timestamp
+				);
+
+				create table Comment
+				(
+					id         integer
+					primary key autoincrement,
+					owner      integer                            not null
+					references User
+					on delete cascade,
+					content    text                               not null,
+					created_at datetime default current_timestamp not null,
+					photo      integer                            not null
+					references Photo
+					on delete cascade
+				);
+
+				create table Like
+				(
+					owner integer not null
+					references User
+					on delete cascade,
+					photo integer not null
+					references Photo
+					on delete cascade,
+					primary key (owner, photo)
+				);
+`)
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &appdbimpl{
 		c: db,
 	}, nil

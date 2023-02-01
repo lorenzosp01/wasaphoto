@@ -14,3 +14,4 @@ docker-compose.log
 /webapi
 tunnel.sh
 service/database/wasa.db
+
