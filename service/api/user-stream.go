@@ -19,7 +19,7 @@ func (rt *_router) getMyStream(w http.ResponseWriter, r *http.Request, params ma
 		return
 	}
 
-	amount, err := strconv.ParseInt(r.URL.Query().Get(r.URL.Query().Get("amount")), 10, 64)
+	amount, err := strconv.ParseInt(r.URL.Query().Get("amount"), 10, 64)
 	if err != nil {
 		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: http.StatusBadRequest, Message: "Query paramaters badly formatted"})
 		return

@@ -28,7 +28,7 @@ async function getUserProfile() {
 		}
 	}).then((response) => {
 		userProfile.value = response.data
-		wantsMorePhotos = (userProfile.value.photos !== null)
+		wantsMorePhotos = (userProfile.value.photos.length !== 0)
 		if (wantsMorePhotos) {
 			let photosId = photos.value.map(photo => photo.id)
 			userProfile.value.photos.forEach(photo => {
@@ -138,7 +138,6 @@ async function editName() {
 		axios.put(`/profiles/${token}/name`, {
 			username: username.value
 		}).then(() => {
-			getUserProfile()
 			isEditingName.value = false
 		}).catch((e) => {
 			if (e.response.status === 409) {

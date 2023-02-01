@@ -87,11 +87,16 @@ func (u *User) fromDatabase(dbUser database.User) {
 
 func (up *UserProfile) fromDatabase(upDb database.UserProfile) {
 	up.UserInfo.fromDatabase(upDb.UserInfo)
-	for _, photo := range upDb.Photos {
-		newPhoto := Photo{}
-		newPhoto.fromDatabase(photo)
-		up.Photos = append(up.Photos, newPhoto)
+	if upDb.Photos != nil {
+		for _, photo := range upDb.Photos {
+			newPhoto := Photo{}
+			newPhoto.fromDatabase(photo)
+			up.Photos = append(up.Photos, newPhoto)
+		}
+	} else {
+		up.Photos = make([]Photo, 0)
 	}
+
 	up.ProfileInfo.FollowingCounter = upDb.ProfileInfo.FollowingCounter
 	up.ProfileInfo.FollowersCounter = upDb.ProfileInfo.FollowersCounter
 	up.ProfileInfo.PhotosCounter = upDb.ProfileInfo.PhotosCounter

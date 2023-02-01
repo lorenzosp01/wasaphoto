@@ -49,7 +49,9 @@ func (rt *_router) getImage(w http.ResponseWriter, r *http.Request, params map[s
 	if dbErr.InternalError != nil {
 		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
-	} else if image == nil {
+	}
+
+	if image == nil {
 		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusConflict, Message: "Photo does not belong to that user"})
 		return
 	}
@@ -99,7 +101,9 @@ func (rt *_router) deletePhoto(w http.ResponseWriter, r *http.Request, params ma
 	if dbErr.InternalError != nil {
 		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
-	} else if !isOperationSuccessful {
+	}
+
+	if !isOperationSuccessful {
 		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusConflict, Message: "Photo does not belong to that user"})
 		return
 	}
@@ -121,7 +125,7 @@ func (rt *_router) getUserProfile(w http.ResponseWriter, r *http.Request, params
 		return
 	}
 
-	amount, err := strconv.ParseInt(r.URL.Query().Get(r.URL.Query().Get("amount")), 10, 64)
+	amount, err := strconv.ParseInt(r.URL.Query().Get("amount"), 10, 64)
 	if err != nil {
 		rt.LoggerAndHttpErrorSender(w, err, utils.HttpError{StatusCode: http.StatusBadRequest, Message: "Query paramaters badly formatted"})
 		return
@@ -133,7 +137,9 @@ func (rt *_router) getUserProfile(w http.ResponseWriter, r *http.Request, params
 	if dbErr.InternalError != nil {
 		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
-	} else if userIsBanned {
+	}
+
+	if userIsBanned {
 		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusForbidden, Message: utils.BannedMessage})
 		return
 	}

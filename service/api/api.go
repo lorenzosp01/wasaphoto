@@ -98,10 +98,12 @@ type _router struct {
 
 func (rt *_router) LoggerAndHttpErrorSender(resWriter http.ResponseWriter, err error, errorResponse utils.HttpError) {
 
+	if err == nil {
+		err = errors.New("")
+	}
+	rt.baseLogger.WithError(err).Error(errorResponse.Message)
 	resWriter.Header().Set("Content-Type", "text/plain")
 	resWriter.WriteHeader(errorResponse.StatusCode)
 	_, _ = resWriter.Write([]byte(errorResponse.Message))
-	if err == nil {
-		rt.baseLogger.WithError(errors.New("")).Error(errorResponse.Message)
-	}
+
 }

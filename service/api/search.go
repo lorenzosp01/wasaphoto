@@ -26,10 +26,9 @@ func (rt *_router) doSearch(w http.ResponseWriter, r *http.Request, params map[s
 			rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 			return
 		}
-		if isBanned {
-			rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusForbidden, Message: "You are banned from this user"})
+		if !isBanned {
+			users = append(users, user)
 		}
-		users = append(users, user)
 	}
 
 	if len(users) == 0 {

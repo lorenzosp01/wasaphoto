@@ -23,8 +23,15 @@ func (rt *_router) likePhoto(w http.ResponseWriter, r *http.Request, params map[
 	if dbErr.InternalError != nil {
 		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
-	} else if isBanned {
+	}
+
+	if isBanned {
 		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusForbidden, Message: utils.BannedMessage})
+		return
+	}
+
+	if !rt.db.DoesPhotoBelongToUser(userId, photoId) {
+		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusConflict, Message: "Photo doesn't belong to that user"})
 		return
 	}
 
@@ -48,6 +55,7 @@ func (rt *_router) likePhoto(w http.ResponseWriter, r *http.Request, params map[
 func (rt *_router) unlikePhoto(w http.ResponseWriter, r *http.Request, params map[string]int64) {
 	authUserId := params["token"]
 	userId := params["user_id"]
+	photoId := params["photo_id"]
 
 	if authUserId != params["targeted_user_id"] {
 		rt.LoggerAndHttpErrorSender(w, errors.New("who deletes like and authenticated user id are different"), utils.HttpError{StatusCode: http.StatusForbidden, Message: "You can't unlike a photo impersonating someone else"})
@@ -64,7 +72,10 @@ func (rt *_router) unlikePhoto(w http.ResponseWriter, r *http.Request, params ma
 		return
 	}
 
-	photoId := params["photo_id"]
+	if !rt.db.DoesPhotoBelongToUser(userId, photoId) {
+		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusConflict, Message: "Photo doesn't belong to that user"})
+		return
+	}
 
 	var isOperationSuccessful bool
 	isOperationSuccessful, dbErr = rt.db.UnlikePhoto(authUserId, photoId, userId)
@@ -95,6 +106,11 @@ func (rt *_router) commentPhoto(w http.ResponseWriter, r *http.Request, params m
 		return
 	} else if isBanned {
 		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusForbidden, Message: utils.BannedMessage})
+		return
+	}
+
+	if !rt.db.DoesPhotoBelongToUser(userId, photoId) {
+		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusConflict, Message: "Photo doesn't belong to that user"})
 		return
 	}
 
@@ -136,10 +152,20 @@ func (rt *_router) getPhotoComments(w http.ResponseWriter, r *http.Request, para
 		return
 	}
 
+	if !rt.db.DoesPhotoBelongToUser(userId, photoId) {
+		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusConflict, Message: "Photo doesn't belong to that user"})
+		return
+	}
+
 	var commentsObject CommentsObject
 	dbComments, dbErr := rt.db.GetPhotoComments(photoId, userId)
 	if dbErr.InternalError != nil {
 		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
+		return
+	}
+
+	if dbComments == nil {
+		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusNotFound, Message: "Comments not found"})
 		return
 	}
 
@@ -159,6 +185,11 @@ func (rt *_router) deleteComment(w http.ResponseWriter, r *http.Request, params 
 	userId := params["user_id"]
 	photoId := params["photo_id"]
 	authUserId := params["token"]
+
+	if !rt.db.DoesPhotoBelongToUser(userId, photoId) {
+		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusConflict, Message: "Photo doesn't belong to that user"})
+		return
+	}
 
 	var isOperationSuccessful bool
 	isOperationSuccessful, dbErr := rt.db.DeleteComment(photoId, userId, authUserId, commentId)

@@ -6,23 +6,25 @@ import (
 	"github.com/mattn/go-sqlite3"
 )
 
-//func (db *appdbimpl) doesPhotoBelongToUser(photo int64, userId int64) bool {
-//	var count int
-//	query := fmt.Sprintf("SELECT count(*) FROM %s WHERE id=? AND owner=?", PhotoTable)
-//	err := db.c.QueryRow(query, photo, userId).Scan(&count)
-//	if err != nil {
-//		return false
-//	}
-//
-//	return count > 0
-//}
+func (db *appdbimpl) DoesPhotoBelongToUser(userId int64, photo int64) bool {
+	var count int
+	query := fmt.Sprintf("SELECT count(*) FROM %s WHERE id=? AND owner=?", PhotoTable)
+	err := db.c.QueryRow(query, photo, userId).Scan(&count)
+
+	if err != nil {
+		return false
+	}
+
+	return count > 0
+}
 
 // Ogni funzione restituisce vero se l'operazione è andata a buon fine, falso altrimenti e l'errore generato
 // Per i delete devo restituire state conflict se non esiste il record da cancellare
 func (db *appdbimpl) LikePhoto(authUser int64, photo int64, photoOwner int64) (bool, DbError) {
 	var dbErr DbError
 	var affected int64
-	query := fmt.Sprintf("INSERT INTO %s (owner, photo) VALUES (?, ?) WHERE EXISTS (SELECT * FROM %s WHERE id=? AND owner=?)", LikeTable, PhotoTable)
+
+	query := fmt.Sprintf("INSERT INTO %s (owner, photo) VALUES (?, ?)", LikeTable)
 	res, err := db.c.Exec(query, authUser, photo, photo, photoOwner)
 
 	if err != nil {
@@ -47,7 +49,8 @@ func (db *appdbimpl) LikePhoto(authUser int64, photo int64, photoOwner int64) (b
 func (db *appdbimpl) UnlikePhoto(authUser int64, photo int64, photoOwner int64) (bool, DbError) {
 	var dbErr DbError
 	var affected int64
-	query := fmt.Sprintf("DELETE FROM %s WHERE owner=? AND photo=? WHERE EXISTS (SELECT * FROM %s WHERE id=? AND owner=?  )", LikeTable, PhotoTable)
+
+	query := fmt.Sprintf("DELETE FROM %s WHERE owner=? AND photo=?", LikeTable)
 	res, err := db.c.Exec(query, authUser, photo, photo, photoOwner)
 
 	if err != nil {
@@ -65,7 +68,7 @@ func (db *appdbimpl) CommentPhoto(authUser int64, photo int64, photoOwner int64,
 	var dbErr DbError
 	var affected int64
 
-	query := fmt.Sprintf("INSERT INTO %s (owner, photo, content) VALUES (?, ?, ?) WHERE EXISTS (SELECT * FROM %s WHERE id=? AND owner=?)", CommentTable, PhotoTable)
+	query := fmt.Sprintf("INSERT INTO %s (owner, photo, content) VALUES (?, ?, ?)", CommentTable)
 	res, err := db.c.Exec(query, authUser, photo, commentText, photo, photoOwner)
 
 	if err != nil {
@@ -83,8 +86,8 @@ func (db *appdbimpl) DeleteComment(photo int64, photoOwner int64, commentOwner i
 	var dbErr DbError
 	var affected int64
 
-	query := fmt.Sprintf("DELETE FROM %s WHERE id=? AND photo=? AND owner=? WHERE EXISTS (SELECT * FROM %s WHERE id=? AND owner=?)", CommentTable, PhotoTable)
-	res, err := db.c.Exec(query, comment, photo, commentOwner, photo, photoOwner)
+	query := fmt.Sprintf("DELETE FROM %s WHERE id=? AND photo=? AND owner=?", CommentTable)
+	res, err := db.c.Exec(query, comment, photo, commentOwner)
 
 	if err != nil {
 		dbErr.InternalError = err
@@ -105,12 +108,13 @@ func (db *appdbimpl) GetPhotoComments(photo int64, photoOwner int64) ([]Comment,
 	userColumn := "name"
 	commentColumn := CommentTable + ".id"
 	query := fmt.Sprintf("SELECT %s, owner, %s, content, created_at FROM %s, %s WHERE owner=%s AND photo=?"+
-		"ORDER BY created_at DESC WHERE EXISTS (SELECT * FROM %s WHERE id=? AND owner=?)", commentColumn, userColumn, CommentTable, UserTable, joinParam, PhotoTable)
+		" AND EXISTS(SELECT * FROM %s WHERE id=? AND owner=?) ORDER BY created_at DESC ", commentColumn, userColumn, CommentTable, UserTable, joinParam, PhotoTable)
 	rows, err := db.c.Query(query, photo, photo, photoOwner)
 
 	if err != nil {
 		dbErr.Code = GenericError
 		dbErr.InternalError = err
+		return comments, dbErr
 	} else {
 		for rows.Next() {
 			var comment Comment

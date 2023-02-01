@@ -41,7 +41,8 @@ import (
 // AppDatabase is the high level interface for the DB
 type AppDatabase interface {
 	Ping() error
-	GetUserId(string) (int64, DbError)
+	GetUserId(string) (bool, int64, DbError)
+	DoesPhotoBelongToUser(int64, int64) bool
 	GetImage(int64, int64) ([]byte, DbError)
 	InsertPhoto([]byte, int64) DbError
 	EntityExists(int64, string) (bool, DbError)
@@ -114,14 +115,12 @@ func (e DbError) ToHttp() utils.HttpError {
 	var httpErr utils.HttpError
 
 	switch e.Code {
-	//case ForbiddenAction:
-	//	httpErr.StatusCode = http.StatusForbidden
-	//case BadInput:
-	//	httpErr.StatusCode = http.StatusBadRequest
 	case StateConflict:
 		httpErr.StatusCode = http.StatusConflict
+		httpErr.Message = "A conflict occurred with the server state"
 	case GenericError:
 		httpErr.StatusCode = http.StatusInternalServerError
+		httpErr.Message = "An internal error occurred"
 	}
 	return httpErr
 }
