@@ -59,7 +59,6 @@ func (db *appdbimpl) UntargetUser(authUserId int64, userId int64, tableName stri
 		affected, _ = res.RowsAffected()
 	} else {
 		dbErr.InternalError = err
-		//todo mettere nel toHttp che se non è settatto il code allore è un errore generico
 		dbErr.Code = GenericError
 		return false, dbErr
 	}

@@ -12,7 +12,6 @@ type userList struct {
 	Users []User `json:"users"`
 }
 
-// todo togliere la request dall'handler
 func (rt *_router) banUser(w http.ResponseWriter, r *http.Request, params map[string]int64) {
 	rt.targetUser(w, params, database.BanTable)
 }

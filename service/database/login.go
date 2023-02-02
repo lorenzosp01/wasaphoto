@@ -40,7 +40,6 @@ func (db *appdbimpl) createUser(username string) (int64, error) {
 		return -1, err
 	}
 
-	//todo da modificare in base alla concorrenza
 	id, err = row.LastInsertId()
 	return id, err
 }

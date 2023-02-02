@@ -105,7 +105,6 @@ type DbError struct {
 	Code          int
 }
 
-// todo rivedere (i codici dovrebbe restituirli solo l'api)
 const (
 	StateConflict int = 4
 	GenericError  int = 5

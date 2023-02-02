@@ -7,7 +7,6 @@ import (
 	"wasaphoto/service/database"
 )
 
-// todo change response and logger
 func (rt *_router) doLogin(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	var username Username
@@ -30,7 +29,7 @@ func (rt *_router) doLogin(w http.ResponseWriter, r *http.Request, ps httprouter
 
 	var id UserIdentifier
 	var dbErr database.DbError
-	var created bool = false
+	var created = false
 
 	// modificare il doc di OpenAPI
 	created, id.Id, dbErr = rt.db.GetUserId(username.Username)
@@ -40,7 +39,6 @@ func (rt *_router) doLogin(w http.ResponseWriter, r *http.Request, ps httprouter
 		return
 	}
 
-	//todo settare gli header ovunque
 	if created {
 		w.WriteHeader(http.StatusCreated)
 	} else {
