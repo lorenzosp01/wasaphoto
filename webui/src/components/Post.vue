@@ -28,7 +28,7 @@ async function getPhoto() {
 		.then((response) => {
 			imgUrl.value = URL.createObjectURL(response.data);
 		}).catch((e) => {
-			error_msg.value = e.toString();
+			error_msg.value = e.response.data
 		})
 }
 
@@ -38,7 +38,7 @@ async function deletePhoto() {
 			emit("delete-photo")
 		})
 		.catch((e) => {
-			error_msg.value = e.toString();
+			error_msg.value = e.response.data
 		})
 }
 
@@ -48,7 +48,11 @@ async function getPhotoComments() {
 			photoComments.value = response.data.comments
 		})
 		.catch((e) => {
-			error_msg.value = e.toString();
+			if (e.response.status === 404) {
+				photoComments.value = []
+			} else {
+				error_msg.value = e.response.data
+			}
 		})
 }
 
@@ -64,10 +68,10 @@ async function likePhoto() {
 						tempPhoto.value.photoInfo.likesCounter -= 1
 					})
 					.catch((e) => {
-						error_msg.value = e.toString();
+						error_msg.value = e.response.data
 					})
 			} else {
-				error_msg.value = e.toString();
+				error_msg.value = e.response.data
 			}
 		})
 }
@@ -81,7 +85,7 @@ async function deleteComment(commentId) {
 			tempPhoto.value.photoInfo.commentsCounter -= 1
 		})
 		.catch((e) => {
-			error_msg.value = e.toString();
+			error_msg.value = e.response.data
 		})
 }
 
@@ -93,12 +97,12 @@ async function commentPhoto() {
 			getPhotoComments().then(() => {
 				tempPhoto.value.photoInfo.commentsCounter += 1
 				newComment.value = ""
-				showComments.value = !showComments.value
+				showComments.value = true
 			}).catch(e => {
-				error_msg.value = e.toString();
+				error_msg.value = e.response.data
 			})
 		}).catch(e => {
-			error_msg.value = e.toString();
+			error_msg.value = e.response.data
 		})
 	} else {
 		error_msg.value = "Comment cannot be empty"

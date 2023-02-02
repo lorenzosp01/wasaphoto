@@ -18,7 +18,7 @@ async function uploadPhoto() {
 			error_msg.value = null;
 			router.push(`/profiles/${token}`);
 		}).catch((e) => {
-			error_msg.value = e.toString();
+			error_msg.value = e.response.data
 		})
 	} else {
 		error_msg.value = "Please select a photo";

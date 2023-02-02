@@ -25,7 +25,7 @@ async function getStream() {
 		}
 	}).catch((e) => {
 		if (e.response.status !== 404) {
-			error_msg.value = e.toString();
+			error_msg.value = e.response.data
 		} else {
 			wantsMorePhotos = false
 		}

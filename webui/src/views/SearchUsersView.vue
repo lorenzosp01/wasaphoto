@@ -18,7 +18,7 @@ async function searchUsers() {
 			users.value = response.data.users
 		}).catch((e) => {
 			if (e.response.status !== 404) {
-				error_msg.value = e.toString();
+				error_msg.value = e.response.data
 			} else {
 				users.value = []
 			}

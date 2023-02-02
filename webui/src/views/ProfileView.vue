@@ -48,7 +48,7 @@ async function getUserProfile() {
 				error_msg.value = "You are not allowed to see this profile"
 				break
 			default:
-				error_msg.value = e.toString()
+				error_msg.value = e.response.data
 		}
 	})
 
@@ -63,7 +63,7 @@ async function getUserFollowed() {
 		})
 		.catch((e) => {
 			if (e.response.status !== 404) {
-				error_msg.value = e.toString();
+				error_msg.value = e.response.data
 			} else {
 				followersList.value = []
 			}
@@ -79,7 +79,7 @@ async function getUserBannedList() {
 		})
 		.catch((e) => {
 			if (e.response.status !== 404) {
-				error_msg.value = e.toString();
+				error_msg.value = e.response.data
 			} else {
 				bannedList.value = []
 			}
@@ -92,7 +92,7 @@ async function banUser() {
 			bannedList.value.push(parseInt(userId.value))
 		})
 		.catch((e) => {
-			error_msg.value = e.toString();
+			error_msg.value = e.response.data
 		})
 }
 
@@ -104,7 +104,7 @@ async function unbanUser() {
 			})
 		})
 		.catch((e) => {
-			error_msg.value = e.toString();
+			error_msg.value = e.response.data
 		})
 }
 
@@ -115,7 +115,7 @@ async function followUser() {
 			followersList.value.push(parseInt(userId.value))
 		})
 		.catch((e) => {
-			error_msg.value = e.toString();
+			error_msg.value = e.response.data
 		})
 }
 
@@ -128,7 +128,7 @@ async function unfollowUser() {
 			})
 		})
 		.catch((e) => {
-			error_msg.value = e.toString();
+			error_msg.value = e.response.data
 		})
 }
 
@@ -143,7 +143,7 @@ async function editName() {
 			if (e.response.status === 409) {
 				error_msg.value = "Someone else is using this username"
 			} else {
-				error_msg.value = e.toString();
+				error_msg.value = e.response.data
 			}
 		})
 	}

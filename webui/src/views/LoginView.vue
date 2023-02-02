@@ -20,7 +20,7 @@ async function login() {
 				router.push(`/profiles/${response.data.identifier}`);
 			}
 		}).catch((e) => {
-			error_msg.value = e.toString()
+			error_msg.value = e.response.data
 		})
 	} else {
 		error_msg.value = "Please enter a username";
