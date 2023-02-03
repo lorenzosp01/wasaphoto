@@ -16,7 +16,6 @@ func (db *appdbimpl) TargetUser(authUserId int64, userId int64, tableName string
 	case FollowTable:
 		query = fmt.Sprintf("INSERT INTO %s (follower, following) VALUES (?, ?)", FollowTable)
 	default:
-		dbErr.Code = GenericError
 		return false, dbErr
 	}
 
@@ -30,7 +29,6 @@ func (db *appdbimpl) TargetUser(authUserId int64, userId int64, tableName string
 				dbErr.Code = StateConflict
 			} else {
 				dbErr.InternalError = err
-				dbErr.Code = GenericError
 			}
 		}
 	} else {
@@ -51,7 +49,6 @@ func (db *appdbimpl) UntargetUser(authUserId int64, userId int64, tableName stri
 	case FollowTable:
 		query = fmt.Sprintf("DELETE FROM %s WHERE follower=? AND following=?", FollowTable)
 	default:
-		dbErr.Code = GenericError
 	}
 
 	res, err := db.c.Exec(query, authUserId, userId)
@@ -59,7 +56,6 @@ func (db *appdbimpl) UntargetUser(authUserId int64, userId int64, tableName stri
 		affected, _ = res.RowsAffected()
 	} else {
 		dbErr.InternalError = err
-		dbErr.Code = GenericError
 		return false, dbErr
 	}
 

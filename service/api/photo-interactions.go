@@ -31,7 +31,7 @@ func (rt *_router) likePhoto(w http.ResponseWriter, r *http.Request, params map[
 	}
 
 	if !rt.db.DoesPhotoBelongToUser(userId, photoId) {
-		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusConflict, Message: "Photo doesn't belong to that user"})
+		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusConflict, Message: utils.NotUserPhotoMessage})
 		return
 	}
 
@@ -43,7 +43,7 @@ func (rt *_router) likePhoto(w http.ResponseWriter, r *http.Request, params map[
 	}
 
 	if !isOperationSuccessful {
-		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusConflict, Message: "Photo doesn't belong to that user"})
+		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusConflict, Message: utils.NotUserPhotoMessage})
 		return
 	}
 
@@ -73,7 +73,7 @@ func (rt *_router) unlikePhoto(w http.ResponseWriter, r *http.Request, params ma
 	}
 
 	if !rt.db.DoesPhotoBelongToUser(userId, photoId) {
-		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusConflict, Message: "Photo doesn't belong to that user"})
+		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusConflict, Message: utils.NotUserPhotoMessage})
 		return
 	}
 
@@ -110,7 +110,7 @@ func (rt *_router) commentPhoto(w http.ResponseWriter, r *http.Request, params m
 	}
 
 	if !rt.db.DoesPhotoBelongToUser(userId, photoId) {
-		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusConflict, Message: "Photo doesn't belong to that user"})
+		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusConflict, Message: utils.NotUserPhotoMessage})
 		return
 	}
 
@@ -153,7 +153,7 @@ func (rt *_router) getPhotoComments(w http.ResponseWriter, r *http.Request, para
 	}
 
 	if !rt.db.DoesPhotoBelongToUser(userId, photoId) {
-		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusConflict, Message: "Photo doesn't belong to that user"})
+		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusConflict, Message: utils.NotUserPhotoMessage})
 		return
 	}
 
@@ -187,7 +187,7 @@ func (rt *_router) deleteComment(w http.ResponseWriter, r *http.Request, params 
 	authUserId := params["token"]
 
 	if !rt.db.DoesPhotoBelongToUser(userId, photoId) {
-		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusConflict, Message: "Photo doesn't belong to that user"})
+		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusConflict, Message: utils.NotUserPhotoMessage})
 		return
 	}
 

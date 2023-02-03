@@ -33,9 +33,6 @@ func (db *appdbimpl) LikePhoto(authUser int64, photo int64, photoOwner int64) (b
 			if errors.Is(sqlErr.ExtendedCode, sqlite3.ErrConstraintPrimaryKey) {
 				dbErr.InternalError = err
 				dbErr.Code = StateConflict
-			} else {
-				dbErr.InternalError = err
-				dbErr.Code = GenericError
 			}
 		}
 		return false, dbErr
@@ -55,7 +52,6 @@ func (db *appdbimpl) UnlikePhoto(authUser int64, photo int64, photoOwner int64) 
 
 	if err != nil {
 		dbErr.InternalError = err
-		dbErr.Code = GenericError
 		return false, dbErr
 	} else {
 		affected, _ = res.RowsAffected()
@@ -72,7 +68,6 @@ func (db *appdbimpl) CommentPhoto(authUser int64, photo int64, photoOwner int64,
 	res, err := db.c.Exec(query, authUser, photo, commentText, photo, photoOwner)
 
 	if err != nil {
-		dbErr.Code = GenericError
 		dbErr.InternalError = err
 		return false, dbErr
 	} else {
@@ -91,7 +86,6 @@ func (db *appdbimpl) DeleteComment(photo int64, photoOwner int64, commentOwner i
 
 	if err != nil {
 		dbErr.InternalError = err
-		dbErr.Code = GenericError
 		return false, dbErr
 	} else {
 		affected, _ = res.RowsAffected()
@@ -112,7 +106,6 @@ func (db *appdbimpl) GetPhotoComments(photo int64, photoOwner int64) ([]Comment,
 	rows, err := db.c.Query(query, photo, photo, photoOwner)
 
 	if err != nil {
-		dbErr.Code = GenericError
 		dbErr.InternalError = err
 		return comments, dbErr
 	} else {
@@ -120,7 +113,6 @@ func (db *appdbimpl) GetPhotoComments(photo int64, photoOwner int64) ([]Comment,
 			var comment Comment
 			err := rows.Scan(&comment.Id, &comment.Owner.Id, &comment.Owner.Username, &comment.Content, &comment.CreatedAt)
 			if err != nil {
-				dbErr.Code = GenericError
 				dbErr.InternalError = err
 				break
 			}
@@ -129,7 +121,6 @@ func (db *appdbimpl) GetPhotoComments(photo int64, photoOwner int64) ([]Comment,
 
 		err = rows.Err()
 		if err != nil {
-			dbErr.Code = GenericError
 			dbErr.InternalError = err
 		}
 

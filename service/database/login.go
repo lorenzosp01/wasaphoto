@@ -23,7 +23,7 @@ func (db *appdbimpl) GetUserId(username string) (bool, int64, DbError) {
 			}
 		}
 		dbErr.InternalError = err
-		dbErr.Code = GenericError
+
 		return created, id, dbErr
 	}
 

@@ -10,14 +10,12 @@ func (db *appdbimpl) DoSearch(pattern string) ([]User, DbError) {
 	rows, err := db.c.Query(query, pattern)
 
 	if err != nil {
-		dbErr.Code = GenericError
 		dbErr.InternalError = err
 	} else {
 		for rows.Next() {
 			var user User
 			err = rows.Scan(&user.Id, &user.Username)
 			if err != nil {
-				dbErr.Code = GenericError
 				dbErr.InternalError = err
 				return nil, dbErr
 			}
@@ -25,7 +23,6 @@ func (db *appdbimpl) DoSearch(pattern string) ([]User, DbError) {
 		}
 
 		if rows.Err() != nil {
-			dbErr.Code = GenericError
 			dbErr.InternalError = err
 			return nil, dbErr
 		}

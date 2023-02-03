@@ -14,14 +14,12 @@ func (db *appdbimpl) GetMyStream(userId int64, offset int64, amount int64) ([]Ph
 	var photos []Photo
 
 	if err != nil {
-		dbErr.Code = GenericError
 		dbErr.InternalError = err
 	} else {
 		for rows.Next() {
 			var photo Photo
 			err = rows.Scan(&photo.Id, &photo.Owner.Username, &photo.Owner.Id, &photo.UploadedAt)
 			if err != nil {
-				dbErr.Code = GenericError
 				dbErr.InternalError = err
 				return nil, dbErr
 			}
@@ -35,7 +33,6 @@ func (db *appdbimpl) GetMyStream(userId int64, offset int64, amount int64) ([]Ph
 		}
 
 		if rows.Err() != nil {
-			dbErr.Code = GenericError
 			dbErr.InternalError = err
 			return nil, dbErr
 		}

@@ -1,7 +1,7 @@
 <script setup>
 import {inject, onMounted, ref} from "vue";
 import Post from "@/components/Post.vue";
-import {onBeforeRouteUpdate} from "vue-router";
+// import {onBeforeRouteUpdate} from "vue-router";
 
 const error_msg = ref(null);
 const axios = inject("axios");
@@ -40,15 +40,10 @@ async function getUserProfile() {
 		username.value = userProfile.value.user_info.username
 		error_msg.value = null
 	}).catch((e) => {
-		switch (e.response.status) {
-			case 404:
-				error_msg.value = "User not found"
-				break
-			case 403:
-				error_msg.value = "You are not allowed to see this profile"
-				break
-			default:
-				error_msg.value = e.response.data
+		if (e.response.status !== 404) {
+			error_msg.value = e.response.data
+		} else {
+			error_msg.value = "User not found"
 		}
 	})
 
@@ -134,7 +129,7 @@ async function unfollowUser() {
 
 
 async function editName() {
-	if (username.value !== userProfile.value.user_info.username) {
+	if (username.value !== userProfile.value.user_info.username && username.value !== "") {
 		axios.put(`/profiles/${token}/name`, {
 			username: username.value
 		}).then(() => {
@@ -163,15 +158,15 @@ const getMorePhotos =  (e) => {
 	}
 }
 
-onBeforeRouteUpdate((to, from) => {
-	userId.value = to.params.id
-	photos.value = []
-	offset = 0
-	amount = 10
-	getUserProfile()
-	getUserFollowed()
-	getUserBannedList()
-})
+// onBeforeRouteUpdate((to, from) => {
+// 	userId.value = to.params.id
+// 	photos.value = []
+// 	offset = 0
+// 	amount = 10
+// 	getUserProfile()
+// 	getUserFollowed()
+// 	getUserBannedList()
+// })
 
 onMounted(() => {
 	userId.value = router.currentRoute.value.params.id
@@ -221,7 +216,7 @@ onMounted(() => {
 			</div>
 
 			<div class="row row-cols-1 row-cols-md-3 px-5 pt-5">
-				<Post v-for="photo in photos" :key="photo.id" @delete-photo="deletePhoto(photo.id)"
+				<Post v-for="photo in photos" :key="photo.id" @deletePhoto="deletePhoto(photo.id)"
 					  :userId="userProfile.user_info.id" :photo="photo"/>
 			</div>
 		</div>

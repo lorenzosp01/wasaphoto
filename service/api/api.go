@@ -101,6 +101,7 @@ func (rt *_router) LoggerAndHttpErrorSender(resWriter http.ResponseWriter, err e
 	if err == nil {
 		err = errors.New("")
 	}
+
 	rt.baseLogger.WithError(err).Error(errorResponse.Message)
 	resWriter.Header().Set("Content-Type", "text/plain")
 	resWriter.WriteHeader(errorResponse.StatusCode)

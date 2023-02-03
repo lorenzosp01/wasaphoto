@@ -57,7 +57,7 @@ onMounted(() => {
 							</RouterLink>
 						</li>
 						<li class="nav-item" v-if="token">
-							<RouterLink :to="`/profiles/${token}`" class="nav-link">
+							<RouterLink :to="`/profiles/${token}`" :key="$route.fullPath" class="nav-link">
 								<svg class="feather">
 									<use href="/feather-sprite-v4.29.0.svg#user"/>
 								</svg>
@@ -86,7 +86,7 @@ onMounted(() => {
 
 			<main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
 				<br>
-				<RouterView @login="getAuthToken"/>
+				<RouterView @login="getAuthToken" :key="$route.fullPath"/>
 			</main>
 		</div>
 	</div>

@@ -67,7 +67,6 @@ onBeforeUnmount(() => {
 				No photo to display
 			</div>
 		</div>
-
 	</div>
 </template>
 

@@ -15,7 +15,6 @@ func (db *appdbimpl) InsertPhoto(image []byte, ownerId int64) DbError {
 	// If the insert was unsuccessful, return an error
 	if err != nil {
 		dbErr.InternalError = err
-		dbErr.Code = GenericError
 	}
 
 	return dbErr
@@ -31,8 +30,6 @@ func (db *appdbimpl) GetImage(photo int64, user int64) ([]byte, DbError) {
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			dbErr.Code = StateConflict
-		} else {
-			dbErr.Code = GenericError
 		}
 		dbErr.InternalError = err
 	}
@@ -51,8 +48,6 @@ func (db *appdbimpl) ChangeUsername(id int64, newUsername string) DbError {
 		if errors.As(err, &sqlErr) {
 			if errors.Is(sqlErr.ExtendedCode, sqlite3.ErrConstraintUnique) {
 				dbErr.Code = StateConflict
-			} else {
-				dbErr.Code = GenericError
 			}
 		}
 	}
@@ -68,7 +63,6 @@ func (db *appdbimpl) DeletePhoto(photo int64, user int64) (bool, DbError) {
 	query := fmt.Sprintf("DELETE FROM %s WHERE id=? AND owner=?", PhotoTable)
 	res, err := db.c.Exec(query, photo, user)
 	if err != nil {
-		dbErr.Code = GenericError
 		dbErr.InternalError = err
 		return false, dbErr
 	} else {
@@ -87,7 +81,6 @@ func (db *appdbimpl) GetUserProfile(id int64, photosAmount int64, photosOffset i
 	err := db.c.QueryRow(query, id).Scan(&up.UserInfo.Username)
 
 	if err != nil {
-		dbErr.Code = GenericError
 		dbErr.InternalError = err
 		return up, dbErr
 	}
@@ -113,7 +106,6 @@ func (db *appdbimpl) GetUserPhotos(id int64, amount int64, offset int64) ([]Phot
 	rows, err := db.c.Query(query, id, amount, offset)
 
 	if err != nil {
-		dbErr.Code = GenericError
 		dbErr.InternalError = err
 		return nil, dbErr
 	}
@@ -124,7 +116,6 @@ func (db *appdbimpl) GetUserPhotos(id int64, amount int64, offset int64) ([]Phot
 	for rows.Next() {
 		err = rows.Scan(&photo.Id, &photo.Owner.Username, &photo.Owner.Id, &photo.UploadedAt)
 		if err != nil {
-			dbErr.Code = GenericError
 			dbErr.InternalError = err
 			return nil, dbErr
 		}
@@ -139,7 +130,6 @@ func (db *appdbimpl) GetUserPhotos(id int64, amount int64, offset int64) ([]Phot
 
 	err = rows.Err()
 	if err != nil {
-		dbErr.Code = GenericError
 		dbErr.InternalError = err
 	}
 
@@ -156,7 +146,6 @@ func (db *appdbimpl) getPhotoCounters(photoId int64) (PhotoCounters, DbError) {
 	err := db.c.QueryRow(query, photoId).Scan(&photoCounters.LikesCounter)
 	if err != nil {
 		dbErr.InternalError = err
-		dbErr.Code = GenericError
 		return photoCounters, dbErr
 	}
 
@@ -164,7 +153,6 @@ func (db *appdbimpl) getPhotoCounters(photoId int64) (PhotoCounters, DbError) {
 	err = db.c.QueryRow(query, photoId).Scan(&photoCounters.CommentsCounter)
 	if err != nil {
 		dbErr.InternalError = err
-		dbErr.Code = GenericError
 	}
 
 	return photoCounters, dbErr
@@ -178,7 +166,6 @@ func (db *appdbimpl) getProfileCounters(id int64) (ProfileCounters, DbError) {
 	err := db.c.QueryRow(query, id).Scan(&profileCounters.FollowingCounter)
 	if err != nil {
 		dbErr.InternalError = err
-		dbErr.Code = GenericError
 		return profileCounters, dbErr
 	}
 
@@ -186,7 +173,6 @@ func (db *appdbimpl) getProfileCounters(id int64) (ProfileCounters, DbError) {
 	err = db.c.QueryRow(query, id).Scan(&profileCounters.FollowersCounter)
 	if err != nil {
 		dbErr.InternalError = err
-		dbErr.Code = GenericError
 		return profileCounters, dbErr
 	}
 
@@ -194,7 +180,6 @@ func (db *appdbimpl) getProfileCounters(id int64) (ProfileCounters, DbError) {
 	err = db.c.QueryRow(query, id).Scan(&profileCounters.PhotosCounter)
 	if err != nil {
 		dbErr.InternalError = err
-		dbErr.Code = GenericError
 	}
 
 	return profileCounters, dbErr

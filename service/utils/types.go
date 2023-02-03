@@ -22,6 +22,6 @@ type HttpError struct {
 }
 
 const (
-	PhotoBelongingMessage string = "Photo doesn't belong to that user"
-	BannedMessage         string = "You are banned"
+	NotUserPhotoMessage string = "That user doesn't own that photo"
+	BannedMessage       string = "You are banned"
 )

@@ -106,8 +106,7 @@ type DbError struct {
 }
 
 const (
-	StateConflict int = 4
-	GenericError  int = 5
+	StateConflict int = 1
 )
 
 func (e DbError) ToHttp() utils.HttpError {
@@ -117,7 +116,7 @@ func (e DbError) ToHttp() utils.HttpError {
 	case StateConflict:
 		httpErr.StatusCode = http.StatusConflict
 		httpErr.Message = "A conflict occurred with the server state"
-	case GenericError:
+	default:
 		httpErr.StatusCode = http.StatusInternalServerError
 		httpErr.Message = "An internal error occurred"
 	}
@@ -237,7 +236,7 @@ func (db *appdbimpl) EntityExists(id int64, tableToUse string) (bool, DbError) {
 	var dbErr DbError
 	if err != nil {
 		dbErr.InternalError = err
-		dbErr.Code = GenericError
+
 		return false, dbErr
 	}
 
@@ -262,7 +261,7 @@ func (db *appdbimpl) IsUserTargeted(targetingUserId int64, targetedUserId int64,
 
 	if err != nil {
 		dbErr.InternalError = err
-		dbErr.Code = GenericError
+
 		return false, dbErr
 	}
 
