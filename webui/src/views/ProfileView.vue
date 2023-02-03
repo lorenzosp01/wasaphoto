@@ -129,18 +129,24 @@ async function unfollowUser() {
 
 
 async function editName() {
-	if (username.value !== userProfile.value.user_info.username && username.value !== "") {
-		axios.put(`/profiles/${token}/name`, {
-			username: username.value
-		}).then(() => {
-			isEditingName.value = false
-		}).catch((e) => {
-			if (e.response.status === 409) {
-				error_msg.value = "Someone else is using this username"
-			} else {
-				error_msg.value = e.response.data
-			}
-		})
+	if (username.value !== userProfile.value.user_info.username) {
+		if (username.value !== ""){
+			axios.put(`/profiles/${token}/name`, {
+				username: username.value
+			}).then(() => {
+				isEditingName.value = false
+			}).catch((e) => {
+				if (e.response.status === 409) {
+					error_msg.value = "Someone else is using this username"
+				} else {
+					error_msg.value = e.response.data
+				}
+			})
+		} else {
+			error_msg.value = "Username can't be empty"
+		}
+	} else {
+		isEditingName.value = false
 	}
 }
 
@@ -184,7 +190,7 @@ onMounted(() => {
 			<div class="h1 align-items-center" v-if="!isEditingName">{{ username }}</div>
 			<input v-else type="text" class="form-control w-25" v-model="username">
 			<div v-if="isEditingName" @click="editName" class="btn btn-sm btn-primary mx-2 align-text-bottom">Conferma</div>
-			<div v-if="token === userId" class="mx-2" @click="isEditingName=!isEditingName">
+			<div v-if="token === userId && !isEditingName" class="mx-2" @click="isEditingName=!isEditingName">
 				<svg class="feather">
 					<use href="/feather-sprite-v4.29.0.svg#edit"/>
 				</svg>
@@ -214,7 +220,6 @@ onMounted(() => {
 					<div class="fs-5 text-center">{{ userProfile.profileInfo.followersCounter }}</div>
 				</div>
 			</div>
-
 			<div class="row row-cols-1 row-cols-md-3 px-5 pt-5">
 				<Post v-for="photo in photos" :key="photo.id" @deletePhoto="deletePhoto(photo.id)"
 					  :userId="userProfile.user_info.id" :photo="photo"/>
