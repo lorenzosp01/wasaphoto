@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 	"strconv"
 	"wasaphoto/service/utils"
@@ -32,9 +31,7 @@ func (rt *_router) getMyStream(w http.ResponseWriter, r *http.Request, params ma
 	}
 
 	if len(dbPhotos) == 0 {
-		httpErr := utils.HttpError{StatusCode: http.StatusNotFound, Message: "No photos found"}
-		rt.LoggerAndHttpErrorSender(w, errors.New("no photos for that user stream"), httpErr)
-		return
+		photos = make([]Photo, 0)
 	}
 
 	for _, dbPhoto := range dbPhotos {

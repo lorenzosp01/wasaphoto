@@ -52,32 +52,28 @@ async function getUserProfile() {
 async function getUserFollowed() {
 	axios.get(`/profiles/${token}/following/`)
 		.then((response) => {
-			followersList.value = response.data.users.map((user) => {
-				return user.id
-			})
+			if (followersList.value.length > 0) {
+				followersList.value = response.data.users.map((user) => {
+					return user.id
+				})
+			}
 		})
 		.catch((e) => {
-			if (e.response.status !== 404) {
-				error_msg.value = e.response.data
-			} else {
-				followersList.value = []
-			}
+			error_msg.value = e.response.data
 		})
 }
 
 async function getUserBannedList() {
 	axios.get(`/profiles/${token}/ban/`)
 		.then((response) => {
-			bannedList.value = response.data.users.map((user) => {
-				return user.id
-			})
+			if (bannedList.value.length > 0) {
+				bannedList.value = response.data.users.map((user) => {
+					return user.id
+				})
+			}
 		})
 		.catch((e) => {
-			if (e.response.status !== 404) {
-				error_msg.value = e.response.data
-			} else {
-				bannedList.value = []
-			}
+			error_msg.value = e.response.data
 		})
 }
 
@@ -130,7 +126,7 @@ async function unfollowUser() {
 
 async function editName() {
 	if (username.value !== userProfile.value.user_info.username) {
-		if (username.value !== ""){
+		if (username.value !== "") {
 			axios.put(`/profiles/${token}/name`, {
 				username: username.value
 			}).then(() => {
@@ -157,7 +153,7 @@ const deletePhoto = (id) => {
 	})
 }
 
-const getMorePhotos =  (e) => {
+const getMorePhotos = (e) => {
 	if (window.scrollY + window.innerHeight >= document.body.scrollHeight && wantsMorePhotos) {
 		offset += amount
 		getUserProfile()
@@ -189,7 +185,8 @@ onMounted(() => {
 		<div class="d-flex justify-content-center align-items-center">
 			<div class="h1 align-items-center" v-if="!isEditingName">{{ username }}</div>
 			<input v-else type="text" class="form-control w-25" v-model="username">
-			<div v-if="isEditingName" @click="editName" class="btn btn-sm btn-primary mx-2 align-text-bottom">Conferma</div>
+			<div v-if="isEditingName" @click="editName" class="btn btn-sm btn-primary mx-2 align-text-bottom">Conferma
+			</div>
 			<div v-if="token === userId && !isEditingName" class="mx-2" @click="isEditingName=!isEditingName">
 				<svg class="feather">
 					<use href="/feather-sprite-v4.29.0.svg#edit"/>
@@ -200,7 +197,8 @@ onMounted(() => {
 					Unfollow
 				</div>
 				<div v-else class="btn btn-primary mx-2" @click="followUser">Follow</div>
-				<div v-if="bannedList.includes(parseInt(userId))" class="btn btn-danger ms-2" @click="unbanUser">Unban</div>
+				<div v-if="bannedList.includes(parseInt(userId))" class="btn btn-danger ms-2" @click="unbanUser">Unban
+				</div>
 				<div v-else class="btn btn-primary ms-2" @click="banUser">Ban</div>
 			</div>
 		</div>

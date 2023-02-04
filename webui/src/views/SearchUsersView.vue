@@ -1,5 +1,5 @@
 <script setup>
-import {inject, onMounted, ref} from "vue";
+import {inject, ref} from "vue";
 
 const axios = inject("axios");
 const router = inject("router");
@@ -17,11 +17,7 @@ async function searchUsers() {
 		}).then((response) => {
 			users.value = response.data.users
 		}).catch((e) => {
-			if (e.response.status !== 404) {
-				error_msg.value = e.response.data
-			} else {
-				users.value = []
-			}
+			error_msg.value = e.response.data
 		})
 	} else {
 		users.value = []
@@ -40,7 +36,8 @@ async function searchUsers() {
 		<ErrorMsg v-if="error_msg" :msg="error_msg"></ErrorMsg>
 		<div class="d-flex justify-content-center w-100">
 			<div class="form-outline mx-2" style="width: 26%; ">
-				<input type="text" v-model="pattern" @input="searchUsers" class="form-control"  placeholder="Search users"/>
+				<input type="text" v-model="pattern" @input="searchUsers" class="form-control"
+					   placeholder="Search users"/>
 			</div>
 			<div class="btn btn-primary" @click="searchUsers">
 				<svg class="feather">
@@ -58,7 +55,7 @@ async function searchUsers() {
 								<h5 class="card-title">{{ user.username }}</h5>
 							</div>
 							<div>
-								<RouterLink :to="{name: 'Profile', params: {id: user.id}}" >
+								<RouterLink :to="{name: 'Profile', params: {id: user.id}}">
 									<svg class="feather">
 										<use href="/feather-sprite-v4.29.0.svg#user"/>
 									</svg>

@@ -165,8 +165,7 @@ func (rt *_router) getPhotoComments(w http.ResponseWriter, r *http.Request, para
 	}
 
 	if dbComments == nil {
-		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusNotFound, Message: "Comments not found"})
-		return
+		commentsObject.Comments = make([]Comment, 0)
 	}
 
 	for _, dbComment := range dbComments {

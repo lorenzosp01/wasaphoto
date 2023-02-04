@@ -48,11 +48,7 @@ async function getPhotoComments() {
 			photoComments.value = response.data.comments
 		})
 		.catch((e) => {
-			if (e.response.status === 404) {
-				photoComments.value = []
-			} else {
-				error_msg.value = e.response.data
-			}
+			error_msg.value = e.response.data
 		})
 }
 

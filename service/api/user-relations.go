@@ -106,7 +106,7 @@ func (rt *_router) untargetUser(w http.ResponseWriter, params map[string]int64, 
 	}
 
 	if !isOperationSuccessful {
-		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusInternalServerError, Message: "Can't untarget user"})
+		rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusNotFound, Message: "Target requested not found"})
 		return
 	}
 
@@ -138,12 +138,12 @@ func (rt *_router) getUsersList(w http.ResponseWriter, r *http.Request, params m
 		return
 	}
 
+	var users []User
 	if dbUsers == nil {
-		rt.LoggerAndHttpErrorSender(w, errors.New("no users found"), utils.HttpError{StatusCode: http.StatusNotFound, Message: "No users found"})
+		users = make([]User, 0)
 		return
 	}
 
-	var users []User
 	for _, dbUser := range dbUsers {
 		var user User
 		user.fromDatabase(dbUser)

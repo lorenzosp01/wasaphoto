@@ -3,18 +3,10 @@ package api
 import (
 	"regexp"
 	"wasaphoto/service/database"
-	"wasaphoto/service/utils"
 )
 
 type CommentsObject struct {
 	Comments []Comment `json:"comments"`
-}
-
-type PathParams struct {
-	AuthUserId   int64
-	TargetUserId int64
-	PhotoId      int64
-	Token        utils.Token
 }
 
 type User struct {
