@@ -45,7 +45,7 @@ func (rt *_router) wrap(fn httpRouterHandler) func(w http.ResponseWriter, r *htt
 		authorizationHeader := r.Header.Get("Authorization")
 		token := utils.GetAuthenticationToken(authorizationHeader)
 		if !token.IsValid() {
-			rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusBadRequest, Message: "Token is not valid"})
+			rt.LoggerAndHttpErrorSender(w, nil, utils.HttpError{StatusCode: http.StatusUnauthorized, Message: "Token is not valid"})
 			return
 		}
 
