@@ -265,10 +265,5 @@ func (db *appdbimpl) IsUserTargeted(targetingUserId int64, targetedUserId int64,
 		return false, dbErr
 	}
 
-	//if targetCount > 0 {
-	//	dbErr.InternalError = errors.New("User is targeted")
-	//	dbErr.Code = ForbiddenAction
-	//}
-
 	return targetCount > 0, dbErr
 }

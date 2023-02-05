@@ -141,7 +141,6 @@ func (rt *_router) getUsersList(w http.ResponseWriter, r *http.Request, params m
 	var users []User
 	if dbUsers == nil {
 		users = make([]User, 0)
-		return
 	}
 
 	for _, dbUser := range dbUsers {

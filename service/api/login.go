@@ -29,11 +29,10 @@ func (rt *_router) doLogin(w http.ResponseWriter, r *http.Request, ps httprouter
 
 	var id UserIdentifier
 	var dbErr database.DbError
-	var created = false
+	var created bool
 
-	// modificare il doc di OpenAPI
 	created, id.Id, dbErr = rt.db.GetUserId(username.Username)
-	// if an error occurred while getting the user id
+	// if an error occurs while getting the user id
 	if dbErr.InternalError != nil {
 		rt.LoggerAndHttpErrorSender(w, dbErr.InternalError, dbErr.ToHttp())
 		return
